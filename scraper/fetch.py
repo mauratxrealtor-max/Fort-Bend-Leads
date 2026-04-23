@@ -380,7 +380,7 @@ class ClerkScraper:
     async def run(self):
         date_from = (datetime.now() - timedelta(days=LOOK_BACK_DAYS)).strftime("%m/%d/%Y")
         date_to   = datetime.now().strftime("%m/%d/%Y")
-        log.info("Search window: %s → %s", date_from, date_to)
+        log.info("Search window: %s -> %s", date_from, date_to)
 
         async with async_playwright() as pw:
             browser = await pw.chromium.launch(
@@ -402,49 +402,170 @@ class ClerkScraper:
             )
             page = await ctx.new_page()
 
-            # Establish session
+            # Step 1: establish Playwright session (sets cookies)
             ok = await self._establish_session(page)
             if not ok:
-                log.error("Could not establish session — aborting")
+                log.error("Could not establish session")
                 await browser.close()
                 return
 
-            # Discover dropdown options once
-            dropdown_opts = await self._get_dropdown_options(page)
-            log.info("Dropdown options available: %d", len(dropdown_opts))
-            if dropdown_opts:
-                log.info("  Sample options: %s", list(dropdown_opts.keys())[:8])
-
-            # Search per doc type
-            found_any = False
-            for code, (label, _) in DOC_TYPES.items():
-                for attempt in range(RETRY_LIMIT):
-                    try:
-                        recs = await self._search_one(
-                            page, code, label, dropdown_opts, date_from, date_to
-                        )
-                        if recs:
-                            found_any = True
-                        self.records.extend(recs)
-                        log.info("  [%s] %s: %d", code, label, len(recs))
-                        break
-                    except PWTimeout:
-                        log.warning("  Timeout [%s] attempt %d", code, attempt + 1)
-                        await asyncio.sleep(3)
-                        await self._establish_session(page)
-                    except Exception as e:
-                        log.warning("  Error [%s]: %s", code, e)
-                        break
-
-            # Broad fallback
-            if not found_any:
-                log.info("Per-type search got 0 — trying broad date-range search…")
-                broad = await self._broad_search(page, date_from, date_to)
-                self.records.extend(broad)
-                log.info("Broad search: %d records", len(broad))
-
+            # Step 2: grab cookies + VIEWSTATE from the search page
+            cookies = await ctx.cookies()
+            cookie_dict = {c["name"]: c["value"] for c in cookies}
+            html = await page.content()
             await browser.close()
+
+        # Step 3: use requests (with the session cookies) to POST the search form
+        # This bypasses the ASP.NET JS postback problem entirely
+        log.info("Cookies obtained: %s", list(cookie_dict.keys()))
+        sess = requests.Session()
+        sess.headers["User-Agent"] = (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+        )
+        sess.headers["Referer"] = SEARCH_URL
+        for name, value in cookie_dict.items():
+            sess.cookies.set(name, value, domain="ccweb.co.fort-bend.tx.us")
+
+        # Extract ASP.NET hidden fields from the page HTML
+        vs = self._extract_viewstate(html)
+        log.info("ViewState length: %d chars", len(vs.get("__VIEWSTATE", "")))
+
+        found_any = False
+        for code, (label, _) in DOC_TYPES.items():
+            for attempt in range(RETRY_LIMIT):
+                try:
+                    recs = self._http_search(sess, vs, code, label, date_from, date_to)
+                    if recs:
+                        found_any = True
+                    self.records.extend(recs)
+                    log.info("  [%s] %s: %d", code, label, len(recs))
+                    break
+                except Exception as e:
+                    log.warning("  Error [%s] attempt %d: %s", code, attempt+1, e)
+                    time.sleep(2)
+
+        if not found_any:
+            log.info("Per-type got 0 — trying broad date search...")
+            recs = self._http_search(sess, vs, None, None, date_from, date_to)
+            self.records.extend(recs)
+            log.info("Broad: %d records", len(recs))
+
         log.info("Scraper done — %d total raw records", len(self.records))
+
+    @staticmethod
+    def _extract_viewstate(html: str) -> dict:
+        """Extract ASP.NET hidden fields from page HTML."""
+        soup = BeautifulSoup(html, "lxml")
+        fields = {}
+        for name in ["__VIEWSTATE", "__VIEWSTATEGENERATOR", "__EVENTVALIDATION",
+                     "__VIEWSTATEENCRYPTED"]:
+            inp = soup.find("input", {"name": name})
+            if inp:
+                fields[name] = inp.get("value", "")
+        return fields
+
+    def _http_search(self, sess: requests.Session, vs: dict,
+                     code: Optional[str], label: Optional[str],
+                     date_from: str, date_to: str) -> list[dict]:
+        """
+        POST directly to Fort Bend Clerk search using requests.
+        The ASP.NET date-range fields are named via hidden inputs we extract
+        from the page source. The doc-type field is cphNoMargin_f_DataTextEdit1.
+        """
+        search_term = ""
+        if code:
+            candidates = DOC_TYPE_KEYWORDS.get(code, [])
+            search_term = candidates[0] if candidates else (label or "")
+
+        # Build the POST payload with all required ASP.NET fields
+        payload = {
+            "__EVENTTARGET": "ctl00$cphNoMargin$f$btnSearch",
+            "__EVENTARGUMENT": "",
+            "__VIEWSTATE": vs.get("__VIEWSTATE", ""),
+            "__VIEWSTATEGENERATOR": vs.get("__VIEWSTATEGENERATOR", ""),
+            "__EVENTVALIDATION": vs.get("__EVENTVALIDATION", ""),
+            # Search method: CONTAINS
+            "ctl00$cphNoMargin$f$ddlSearchType": "CONTAINS",
+            # Doc type field
+            "ctl00$cphNoMargin$f$DataTextEdit1": search_term,
+            # Date range — these are the ASP.NET names for the datepicker fields
+            "ctl00$cphNoMargin$f$dcDateFiled$DateTextBox1": date_from,
+            "ctl00$cphNoMargin$f$dcDateFiled$DateTextBox2": date_to,
+            # Required party/name fields (blank = any)
+            "ctl00$cphNoMargin$f$txtParty": "",
+            "ctl00$cphNoMargin$f$txtGrantor": "",
+            "ctl00$cphNoMargin$f$txtGrantee": "",
+            "ctl00$cphNoMargin$f$txtInstrumentNoFrom": "",
+            "ctl00$cphNoMargin$f$txtInstrumentNoTo": "",
+            "ctl00$cphNoMargin$f$txtBook": "",
+            "ctl00$cphNoMargin$f$txtPage": "",
+            "ctl00$cphNoMargin$f$ddlTown": "",
+            # Name search mode
+            "ctl00$cphNoMargin$f$NameSearchMode": "rdoCombine",
+            "ctl00$cphNoMargin$f$drbPartyType": "",
+        }
+
+        all_records = []
+        page_num = 1
+
+        while True:
+            try:
+                r = sess.post(SEARCH_URL, data=payload,
+                              timeout=30, verify=False)
+                r.raise_for_status()
+            except Exception as e:
+                log.warning("  HTTP POST error: %s", e)
+                break
+
+            log.info("  POST -> %s  status=%d  len=%d",
+                     r.url, r.status_code, len(r.text))
+
+            # Check if we got results or stayed on search page
+            if "SearchResults" not in r.url and "no records" not in r.text.lower():
+                soup = BeautifulSoup(r.text, "lxml")
+                # Look for error messages
+                err = soup.find(class_=lambda c: c and "error" in c.lower())
+                if err:
+                    log.warning("  Form error: %s", err.get_text(strip=True)[:200])
+
+            recs = self._parse_table(r.text, code or "OTHER",
+                                     label or "All Types", bool(code))
+            if not recs:
+                # Log a snippet to diagnose
+                log.info("  Page %d: 0 rows. Snippet: %s",
+                         page_num, r.text[r.text.lower().find("<body"):
+                                          r.text.lower().find("<body")+400]
+                         .replace("\n", " ")[:300]
+                         if "<body" in r.text.lower() else r.text[:300])
+                break
+
+            all_records.extend(recs)
+            log.info("  Page %d: %d rows", page_num, len(recs))
+
+            # Check for next page link
+            soup = BeautifulSoup(r.text, "lxml")
+            next_link = soup.find("a", string=lambda t: t and "next" in t.lower())
+            if not next_link:
+                break
+
+            # Build next-page payload using __doPostBack
+            next_target = next_link.get("href", "")
+            if "__doPostBack" in next_target:
+                import re as _re
+                m = _re.search(r"__doPostBack\(.(\w[\w\$]+)", next_target)
+                if m:
+                    payload["__EVENTTARGET"] = m.group(1)
+                    payload["__EVENTARGUMENT"] = ""
+            else:
+                break
+
+            page_num += 1
+            if page_num > 30:
+                break
+            time.sleep(0.5)
+
+        return all_records
 
     # ── Session gate ──────────────────────────────────────────────────────────
     async def _establish_session(self, page) -> bool:

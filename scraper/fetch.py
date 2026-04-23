@@ -521,23 +521,35 @@ class ClerkScraper:
             log.info("  POST -> %s  status=%d  len=%d",
                      r.url, r.status_code, len(r.text))
 
-            # Check if we got results or stayed on search page
-            if "SearchResults" not in r.url and "no records" not in r.text.lower():
-                soup = BeautifulSoup(r.text, "lxml")
-                # Look for error messages
-                err = soup.find(class_=lambda c: c and "error" in c.lower())
-                if err:
-                    log.warning("  Form error: %s", err.get_text(strip=True)[:200])
+            # On first LP search, dump the full response to a file for inspection
+            if code == "LP" and page_num == 1:
+                dump_path = Path(__file__).parent.parent / "data" / "response_dump.html"
+                dump_path.parent.mkdir(parents=True, exist_ok=True)
+                dump_path.write_text(r.text, encoding="utf-8")
+                log.info("  Response dumped to data/response_dump.html")
+                # Also log key sections
+                soup_d = BeautifulSoup(r.text, "lxml")
+                # Find all form inputs to see what the server sent back
+                all_inputs = soup_d.find_all("input", {"type": ["submit","button","image"]})
+                log.info("  Submit buttons in response: %s",
+                         [(i.get("name",""), i.get("value",""), i.get("id",""))
+                          for i in all_inputs])
+                # Find error/validation messages
+                for cls in ["error", "validator", "validation", "message", "alert"]:
+                    errs = soup_d.find_all(class_=lambda c: c and cls in c.lower())
+                    if errs:
+                        log.info("  [%s] elements: %s",
+                                 cls, [e.get_text(strip=True)[:100] for e in errs[:3]])
+                # Check if results table exists
+                tbls = soup_d.find_all("table")
+                log.info("  Tables in response: %d", len(tbls))
+                for t in tbls[:5]:
+                    log.info("    Table id=%s class=%s rows=%d",
+                             t.get("id",""), t.get("class",""), len(t.find_all("tr")))
 
             recs = self._parse_table(r.text, code or "OTHER",
                                      label or "All Types", bool(code))
             if not recs:
-                # Log a snippet to diagnose
-                log.info("  Page %d: 0 rows. Snippet: %s",
-                         page_num, r.text[r.text.lower().find("<body"):
-                                          r.text.lower().find("<body")+400]
-                         .replace("\n", " ")[:300]
-                         if "<body" in r.text.lower() else r.text[:300])
                 break
 
             all_records.extend(recs)

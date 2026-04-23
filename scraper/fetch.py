@@ -1,6 +1,7 @@
 """
 Fort Bend County Motivated Seller Lead Scraper
-Targets: Harris County Clerk portal + Fort Bend CAD bulk parcel data
+Targets: Fort Bend County Clerk portal (ccweb.co.fort-bend.tx.us)
+         + Fort Bend CAD bulk parcel data (fbcad.org)
 Runs daily via GitHub Actions, outputs dashboard/records.json + data/records.json
 """
 
@@ -31,9 +32,11 @@ logging.basicConfig(
 log = logging.getLogger("scraper")
 
 # ── Constants ─────────────────────────────────────────────────────────────────
-CLERK_URL      = "https://cclerk.hctx.net/PublicRecords.aspx"
-FBCAD_BASE     = "https://www.fbcad.org"          # Fort Bend CAD
-FBCAD_EXPORT   = "https://www.fbcad.org/Property-Search/Export-Data/"  # may redirect
+# Fort Bend County Clerk — Official public records search portal
+FBC_CLERK_URL  = "https://ccweb.co.fort-bend.tx.us/"
+FBC_CLERK_SEARCH = "https://ccweb.co.fort-bend.tx.us/RealEstate/SearchEntry.aspx"
+
+FBCAD_BASE     = "https://www.fbcad.org"
 OUTPUT_PATHS   = [
     Path(__file__).parent.parent / "dashboard" / "records.json",
     Path(__file__).parent.parent / "data"      / "records.json",
@@ -361,25 +364,39 @@ class ParcelDB:
 
 class ClerkScraper:
     """
-    Scrapes Harris County Clerk public records portal for Fort Bend
-    motivated-seller document types using Playwright (headless Chromium).
+    Scrapes Fort Bend County Clerk public records portal
+    (https://ccweb.co.fort-bend.tx.us/) using Playwright.
+
+    The portal is a classic ASP.NET WebForms app with:
+      - SearchEntry.aspx  — instrument-type + date-range search form
+      - SearchResults.aspx — paged results table
     """
 
-    # Note: The Harris County Clerk portal at cclerk.hctx.net covers Harris County.
-    # Fort Bend County has its own clerk at fortbendcountytx.gov/clerk
-    # We scrape BOTH to maximise coverage for the Houston metro area.
-    PORTALS = [
-        {
-            "name":    "Harris County Clerk",
-            "url":     "https://cclerk.hctx.net/PublicRecords.aspx",
-            "county":  "Harris",
-        },
-        {
-            "name":    "Fort Bend County Clerk",
-            "url":     "https://www.fortbendcountytx.gov/government/departments/county-clerk/official-public-records",
-            "county":  "Fort Bend",
-        },
-    ]
+    # Fort Bend Clerk's actual search portal
+    BASE_URL   = "https://ccweb.co.fort-bend.tx.us"
+    SEARCH_URL = "https://ccweb.co.fort-bend.tx.us/RealEstate/SearchEntry.aspx"
+
+    # Fort Bend uses short instrument-type codes in their dropdown.
+    # Map our internal codes → the exact option text/value the site uses.
+    # (Confirmed from the Fort Bend Clerk portal's dropdown options)
+    FBC_DOC_MAP = {
+        "LP":       ["LIS PENDENS", "LP"],
+        "NOFC":     ["NOTICE OF FORECLOSURE", "NOFC", "NFC"],
+        "TAXDEED":  ["TAX DEED", "TAXDEED", "TD"],
+        "JUD":      ["JUDGMENT", "JUD"],
+        "CCJ":      ["CERTIFIED COPY OF JUDGMENT", "CCJ"],
+        "DRJUD":    ["DOMESTIC RELATIONS JUDGMENT", "DRJUD"],
+        "LNCORPTX": ["STATE TAX LIEN", "CORP TAX LIEN", "LNCORPTX", "STLIEN"],
+        "LNIRS":    ["IRS TAX LIEN", "LNIRS", "FEDTAXLIEN"],
+        "LNFED":    ["FEDERAL LIEN", "LNFED"],
+        "LN":       ["LIEN", "LN"],
+        "LNMECH":   ["MECHANIC LIEN", "MECHANIC'S LIEN", "LNMECH"],
+        "LNHOA":    ["HOA LIEN", "HOMEOWNER ASSOC LIEN", "LNHOA"],
+        "MEDLN":    ["MEDICAID LIEN", "MEDLN"],
+        "PRO":      ["PROBATE", "PRO"],
+        "NOC":      ["NOTICE OF COMMENCEMENT", "NOC"],
+        "RELLP":    ["RELEASE OF LIS PENDENS", "RELLP", "REL LP"],
+    }
 
     def __init__(self, parcel_db: ParcelDB):
         self.parcel_db = parcel_db
@@ -388,192 +405,248 @@ class ClerkScraper:
     async def run(self):
         date_from = (datetime.now() - timedelta(days=LOOK_BACK_DAYS)).strftime("%m/%d/%Y")
         date_to   = datetime.now().strftime("%m/%d/%Y")
+        log.info("Fort Bend Clerk: searching %s → %s", date_from, date_to)
 
         async with async_playwright() as pw:
             browser = await pw.chromium.launch(headless=True)
-            ctx     = await browser.new_context(
+            ctx = await browser.new_context(
                 user_agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
-                           "(KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+                           "(KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+                ignore_https_errors=True,
             )
-            for portal in self.PORTALS:
-                try:
-                    await self._scrape_portal(ctx, portal, date_from, date_to)
-                except Exception as e:
-                    log.error("Portal %s failed: %s", portal["name"], e)
+            page = await ctx.new_page()
+
+            # ── Step 1: load the search page and capture __VIEWSTATE ──────────
+            log.info("Loading Fort Bend Clerk search page…")
+            try:
+                await page.goto(self.SEARCH_URL, timeout=30_000,
+                                wait_until="domcontentloaded")
+                await asyncio.sleep(1)
+            except Exception as e:
+                log.error("Could not load Fort Bend Clerk portal: %s", e)
+                await browser.close()
+                return
+
+            # ── Step 2: discover available instrument-type options ────────────
+            available_options = await self._get_available_options(page)
+            log.info("Found %d instrument options in dropdown", len(available_options))
+
+            # ── Step 3: search each relevant doc type ─────────────────────────
+            for internal_code, (label, _) in DOC_TYPES.items():
+                candidates = self.FBC_DOC_MAP.get(internal_code, [])
+                matched_option = self._match_option(available_options, candidates)
+
+                if not matched_option:
+                    log.debug("  No portal match for %s — skipping", internal_code)
+                    continue
+
+                for attempt in range(RETRY_LIMIT):
+                    try:
+                        recs = await self._search_one_type(
+                            page, internal_code, label, matched_option, date_from, date_to
+                        )
+                        self.records.extend(recs)
+                        log.info("  FBC [%s] (%s): %d records", internal_code, matched_option, len(recs))
+                        break
+                    except PWTimeout:
+                        log.warning("  Timeout %s attempt %d", internal_code, attempt + 1)
+                        await asyncio.sleep(3)
+                        try:
+                            await page.goto(self.SEARCH_URL, timeout=20_000,
+                                            wait_until="domcontentloaded")
+                        except Exception:
+                            pass
+                    except Exception as e:
+                        log.warning("  Error %s: %s", internal_code, e)
+                        break
+
             await browser.close()
 
-        log.info("Clerk scraper finished — %d raw records", len(self.records))
+        log.info("Clerk scraper done — %d raw records", len(self.records))
 
-    async def _scrape_portal(self, ctx, portal: dict, date_from: str, date_to: str):
-        page = await ctx.new_page()
-        log.info("Opening %s", portal["url"])
-        try:
-            await page.goto(portal["url"], timeout=30_000, wait_until="domcontentloaded")
-        except PWTimeout:
-            log.warning("Timeout loading %s — skipping", portal["name"])
-            return
+    # ── Helpers ──────────────────────────────────────────────────────────────
 
-        # For each doc type, run a search
-        for code, (label, _) in DOC_TYPES.items():
-            for attempt in range(RETRY_LIMIT):
-                try:
-                    recs = await self._search_doc_type(page, portal, code, label, date_from, date_to)
-                    self.records.extend(recs)
-                    log.info("  %s [%s]: %d records", portal["county"], code, len(recs))
+    async def _get_available_options(self, page) -> dict[str, str]:
+        """
+        Returns {option_text_upper: option_value} for the instrument-type
+        dropdown on the Fort Bend Clerk search page.
+        """
+        options = {}
+        # The select is typically named InstrumentType, DocType, or similar
+        selectors = [
+            "select[name*='InstrumentType']",
+            "select[name*='DocType']",
+            "select[name*='Type']",
+            "select[id*='InstrumentType']",
+            "select[id*='DocType']",
+            "select",   # fallback: first select on page
+        ]
+        for sel in selectors:
+            els = page.locator(sel)
+            count = await els.count()
+            if count > 0:
+                # Get all options from the first matching select
+                all_opts = await els.first.evaluate("""el => {
+                    return Array.from(el.options).map(o => ({
+                        text: o.text.trim(),
+                        value: o.value.trim()
+                    }));
+                }""")
+                for o in all_opts:
+                    if o["text"] and o["text"] not in ("", "-- Select --",
+                                                        "Select Type", "All"):
+                        options[o["text"].upper()] = o["value"] or o["text"]
+                if options:
                     break
-                except PWTimeout:
-                    log.warning("  Timeout on %s/%s (attempt %d)", code, portal["county"], attempt + 1)
-                    await asyncio.sleep(2)
-                except Exception as e:
-                    log.warning("  Error on %s/%s: %s", code, portal["county"], e)
-                    break
-        await page.close()
+        return options
 
-    async def _search_doc_type(self, page, portal: dict, code: str, label: str,
+    def _match_option(self, available: dict[str, str],
+                      candidates: list[str]) -> Optional[str]:
+        """
+        Given a dict of {UPPER_TEXT: value} from the portal dropdown and a list
+        of candidate strings, return the portal option value that best matches.
+        """
+        for candidate in candidates:
+            cu = candidate.upper()
+            # Exact match on text
+            if cu in available:
+                return available[cu]
+            # Partial match
+            for text, val in available.items():
+                if cu in text or text in cu:
+                    return val
+        return None
+
+    async def _search_one_type(self, page, code: str, label: str,
+                                option_value: str,
                                 date_from: str, date_to: str) -> list[dict]:
         """
-        Generic search handler — tries common clerk portal patterns.
-        Harris County Clerk uses a specific ASP.NET form pattern.
+        Fill and submit the Fort Bend search form for one instrument type,
+        then collect all pages of results.
         """
-        records = []
+        # Navigate back to search form
+        await page.goto(self.SEARCH_URL, timeout=25_000, wait_until="domcontentloaded")
+        await asyncio.sleep(0.5)
 
-        # --- Harris County Clerk specific flow ---
-        if "hctx.net" in portal["url"]:
-            records = await self._hctx_search(page, code, label, date_from, date_to)
-
-        # --- Fort Bend County Clerk — static/REST approach ---
-        elif "fortbend" in portal["url"]:
-            records = await self._fbctx_search(page, code, label, date_from, date_to, portal)
-
-        return records
-
-    async def _hctx_search(self, page, code: str, label: str,
-                            date_from: str, date_to: str) -> list[dict]:
-        """Harris County Clerk — ASP.NET post-back form search."""
-        records = []
-        url = CLERK_URL
-
-        await page.goto(url, timeout=30_000, wait_until="domcontentloaded")
-        await asyncio.sleep(1)
-
-        # Try to fill search form fields
-        try:
-            # Instrument type / doc type selector
-            sel = page.locator("select[name*='DocType'], select[id*='DocType'], "
-                               "select[name*='InstrumentType'], select[id*='Type']")
+        # ── Fill instrument type ─────────────────────────────────────────────
+        for sel_locator in [
+            "select[name*='InstrumentType']", "select[name*='DocType']",
+            "select[name*='Type']", "select[id*='InstrumentType']", "select",
+        ]:
+            sel = page.locator(sel_locator)
             if await sel.count() > 0:
-                await sel.first.select_option(label=label)
-            else:
-                # Try text input
-                inp = page.locator("input[name*='DocType'], input[id*='InstrumentType']")
-                if await inp.count() > 0:
-                    await inp.first.fill(code)
-
-            # Date range fields
-            for name_frag in ["DateFrom", "StartDate", "BeginDate", "FromDate"]:
-                fld = page.locator(f"input[name*='{name_frag}'], input[id*='{name_frag}']")
-                if await fld.count() > 0:
-                    await fld.first.fill(date_from)
+                try:
+                    await sel.first.select_option(value=option_value)
                     break
+                except Exception:
+                    try:
+                        await sel.first.select_option(label=option_value)
+                        break
+                    except Exception:
+                        pass
 
-            for name_frag in ["DateTo", "EndDate", "ToDate"]:
-                fld = page.locator(f"input[name*='{name_frag}'], input[id*='{name_frag}']")
-                if await fld.count() > 0:
-                    await fld.first.fill(date_to)
-                    break
-
-            # Submit
-            btn = page.locator("input[type='submit'], button[type='submit']")
-            if await btn.count() > 0:
-                await btn.first.click()
-                await page.wait_for_load_state("domcontentloaded", timeout=20_000)
-                await asyncio.sleep(1)
-
-            records = await self._parse_results_table(page, code, label)
-
-            # Pagination
-            page_num = 2
-            while True:
-                next_btn = page.locator("a:has-text('Next'), a:has-text('>'), "
-                                        "input[value='Next'], a[id*='next']")
-                if await next_btn.count() == 0:
-                    break
-                await next_btn.first.click()
-                await page.wait_for_load_state("domcontentloaded", timeout=20_000)
-                await asyncio.sleep(0.8)
-                page_recs = await self._parse_results_table(page, code, label)
-                if not page_recs:
-                    break
-                records.extend(page_recs)
-                page_num += 1
-                if page_num > 20:  # safety cap
-                    break
-
-        except PWTimeout:
-            raise
-        except Exception as e:
-            log.debug("hctx_search error for %s: %s", code, e)
-
-        return records
-
-    async def _fbctx_search(self, page, code: str, label: str,
-                             date_from: str, date_to: str, portal: dict) -> list[dict]:
-        """Fort Bend County Clerk — attempt REST / search URL patterns."""
-        records = []
-        # Fort Bend often uses a different search endpoint
-        search_urls = [
-            f"https://www.fortbendcountytx.gov/government/departments/county-clerk/"
-            f"official-public-records?doc_type={code}&from={date_from}&to={date_to}",
-            f"https://fbctx.county-clerk.com/search?type={code}&startdate={date_from}&enddate={date_to}",
+        # ── Fill date range ──────────────────────────────────────────────────
+        date_field_map = [
+            (["FileDate_Start", "StartDate", "DateFrom", "BeginDate",
+              "FromDate", "StartRecordedDate"], date_from),
+            (["FileDate_End",   "EndDate",   "DateTo",   "EndDate",
+              "ToDate",   "EndRecordedDate"],   date_to),
         ]
-        for surl in search_urls:
-            try:
-                await page.goto(surl, timeout=20_000, wait_until="domcontentloaded")
-                recs = await self._parse_results_table(page, code, label)
-                if recs:
-                    records.extend(recs)
+        for field_names, value in date_field_map:
+            for fname in field_names:
+                fld = page.locator(
+                    f"input[name*='{fname}'], input[id*='{fname}']"
+                )
+                if await fld.count() > 0:
+                    await fld.first.triple_click()
+                    await fld.first.fill(value)
                     break
-            except Exception:
-                pass
-        return records
 
-    async def _parse_results_table(self, page, code: str, label: str) -> list[dict]:
-        """Parse standard HTML results table into record dicts."""
-        records = []
+        # ── Submit ───────────────────────────────────────────────────────────
+        submit = page.locator(
+            "input[type='submit'][value*='Search'], "
+            "input[type='submit'][value*='search'], "
+            "button[type='submit'], "
+            "input[type='submit']"
+        )
+        if await submit.count() > 0:
+            await submit.first.click()
+        else:
+            # Try __doPostBack
+            await page.evaluate("__doPostBack && __doPostBack('btnSearch','')")
+
+        await page.wait_for_load_state("domcontentloaded", timeout=25_000)
+        await asyncio.sleep(0.8)
+
+        # ── Collect paginated results ────────────────────────────────────────
+        all_records = []
+        page_num = 1
+        while True:
+            recs = await self._parse_results_page(page, code, label)
+            all_records.extend(recs)
+
+            # Try to go to next page
+            next_btn = page.locator(
+                "a:has-text('Next'), a:has-text('>'), "
+                "input[value='Next >'], input[value='Next'], "
+                "a[id*='Next'], a[id*='next']"
+            )
+            if await next_btn.count() == 0:
+                break
+            if not recs:   # empty page = done
+                break
+            await next_btn.first.click()
+            await page.wait_for_load_state("domcontentloaded", timeout=20_000)
+            await asyncio.sleep(0.6)
+            page_num += 1
+            if page_num > 25:
+                break
+
+        return all_records
+
+    async def _parse_results_page(self, page, code: str, label: str) -> list[dict]:
+        """Parse the current results page HTML into record dicts."""
         html  = await page.content()
         soup  = BeautifulSoup(html, "lxml")
         today = datetime.now()
+        records = []
 
         for table in soup.find_all("table"):
-            headers = [th.get_text(strip=True).lower()
-                       for th in table.find_all(["th", "td"])[:20]]
-            header_str = " ".join(headers)
-
-            # Only process tables that look like record results
-            if not any(kw in header_str for kw in
-                       ["doc", "instrument", "grantor", "grantee", "date", "filed"]):
+            # Skip navigation/layout tables
+            header_cells = table.find_all(["th", "td"])[:15]
+            header_text  = " ".join(c.get_text(strip=True).lower() for c in header_cells)
+            if not any(kw in header_text for kw in
+                       ["instrument", "grantor", "grantee", "filed", "record", "doc"]):
                 continue
 
-            # Map column indices
+            # Build column map from header row
             col_map = {}
-            for i, h in enumerate(headers):
-                if "doc" in h or "instrument" in h or "number" in h:
+            hrow = table.find("tr")
+            if not hrow:
+                continue
+            for i, th in enumerate(hrow.find_all(["th", "td"])):
+                h = th.get_text(strip=True).lower()
+                if re.search(r"inst(rument)?\s*(num|#|no)", h):
                     col_map.setdefault("doc_num", i)
-                elif "type" in h:
+                elif re.search(r"inst(rument)?\s*type|doc\s*type", h):
                     col_map.setdefault("doc_type", i)
-                elif "file" in h or "record" in h or "date" in h:
+                elif re.search(r"(file|record|instrument)\s*date", h):
                     col_map.setdefault("filed", i)
-                elif "grantor" in h or "owner" in h:
+                elif re.search(r"grantor|owner|party\s*1", h):
                     col_map.setdefault("owner", i)
-                elif "grantee" in h:
+                elif re.search(r"grantee|party\s*2", h):
                     col_map.setdefault("grantee", i)
-                elif "legal" in h or "desc" in h:
+                elif re.search(r"legal|desc|abstract", h):
                     col_map.setdefault("legal", i)
-                elif "amount" in h or "consid" in h:
+                elif re.search(r"amount|consider|price", h):
                     col_map.setdefault("amount", i)
+                elif re.search(r"book|vol", h):
+                    col_map.setdefault("book", i)
+                elif re.search(r"page|pg", h):
+                    col_map.setdefault("pg", i)
 
-            rows = table.find_all("tr")[1:]   # skip header row
-            for tr in rows:
+            data_rows = table.find_all("tr")[1:]
+            for tr in data_rows:
                 cells = tr.find_all(["td", "th"])
                 if len(cells) < 2:
                     continue
@@ -583,25 +656,27 @@ class ClerkScraper:
                     idx = col_map.get(key)
                     return texts[idx] if idx is not None and idx < len(texts) else default
 
-                # Extract doc link
+                # Build clerk URL from any link in the doc_num cell
                 link = ""
-                if col_map.get("doc_num") is not None:
-                    a = cells[col_map["doc_num"]].find("a")
+                doc_num_idx = col_map.get("doc_num", 0)
+                if doc_num_idx < len(cells):
+                    a = cells[doc_num_idx].find("a")
                     if a and a.get("href"):
                         href = a["href"]
-                        link = href if href.startswith("http") else f"https://cclerk.hctx.net{href}"
+                        link = (href if href.startswith("http")
+                                else self.BASE_URL + "/" + href.lstrip("/"))
 
-                # Parse filed date
-                raw_date = _get("filed")
+                # Parse & validate filed date
+                raw_date  = _get("filed")
                 filed_str = ""
-                for fmt in ("%m/%d/%Y", "%Y-%m-%d", "%m-%d-%Y", "%d/%m/%Y"):
+                for fmt in ("%m/%d/%Y", "%Y-%m-%d", "%m-%d-%Y"):
                     try:
-                        filed_str = datetime.strptime(raw_date, fmt).strftime("%Y-%m-%d")
+                        filed_str = datetime.strptime(raw_date.strip(), fmt).strftime("%Y-%m-%d")
                         break
                     except Exception:
                         pass
 
-                # Skip records outside look-back window
+                # Skip records outside our look-back window
                 if filed_str:
                     try:
                         fd = datetime.strptime(filed_str, "%Y-%m-%d")
@@ -609,27 +684,28 @@ class ClerkScraper:
                             continue
                     except Exception:
                         pass
+                else:
+                    # No parseable date — skip to avoid junk rows
+                    continue
 
-                raw_owner = _get("owner") or " ".join(texts[:2])
-                doc_num   = _get("doc_num") or texts[0] if texts else ""
-
-                if not doc_num:
+                raw_owner = _get("owner")
+                doc_num   = _get("doc_num") or (texts[0] if texts else "")
+                if not doc_num.strip():
                     continue
 
                 rec = {
-                    "doc_num":   doc_num,
-                    "doc_type":  _get("doc_type") or label,
-                    "filed":     filed_str or raw_date,
-                    "cat":       code,
-                    "cat_label": label,
-                    "owner":     raw_owner,
-                    "grantee":   _get("grantee"),
-                    "amount":    _get("amount"),
-                    "legal":     _get("legal"),
-                    "clerk_url": link,
-                    # Address fields filled in by parcel lookup
+                    "doc_num":      doc_num.strip(),
+                    "doc_type":     _get("doc_type") or label,
+                    "filed":        filed_str,
+                    "cat":          code,
+                    "cat_label":    label,
+                    "owner":        raw_owner,
+                    "grantee":      _get("grantee"),
+                    "amount":       _get("amount"),
+                    "legal":        _get("legal"),
+                    "clerk_url":    link or f"{self.SEARCH_URL}",
                     "prop_address": "",
-                    "prop_city":    "Houston",
+                    "prop_city":    "",
                     "prop_state":   "TX",
                     "prop_zip":     "",
                     "mail_address": "",
@@ -639,9 +715,10 @@ class ClerkScraper:
                 }
 
                 # Enrich with parcel data
-                parcel = self.parcel_db.lookup(raw_owner)
-                if parcel:
-                    rec.update(parcel)
+                if raw_owner:
+                    parcel = self.parcel_db.lookup(raw_owner)
+                    if parcel:
+                        rec.update({k: v for k, v in parcel.items() if v})
 
                 rec["flags"], rec["score"] = score_record(rec)
                 records.append(rec)
@@ -701,7 +778,7 @@ def build_output(records: list[dict]) -> dict:
     now = datetime.utcnow()
     return {
         "fetched_at":    now.isoformat() + "Z",
-        "source":        "Harris County Clerk + Fort Bend CAD",
+        "source":        "Fort Bend County Clerk + Fort Bend CAD",
         "date_range":    {
             "from": (now - timedelta(days=LOOK_BACK_DAYS)).strftime("%Y-%m-%d"),
             "to":   now.strftime("%Y-%m-%d"),
@@ -758,7 +835,7 @@ def save_ghl_csv(records: list[dict]):
                 "Amount/Debt Owed":       r.get("amount", ""),
                 "Seller Score":           r.get("score", 0),
                 "Motivated Seller Flags": "; ".join(r.get("flags", [])),
-                "Source":                 "Harris County Clerk / Fort Bend CAD",
+                "Source":                 "Fort Bend County Clerk / Fort Bend CAD",
                 "Public Records URL":     r.get("clerk_url", ""),
             })
     log.info("GHL CSV saved → %s  (%d rows)", GHL_PATH, len(records))

@@ -194,11 +194,17 @@ class ParcelDB:
     def _download_and_parse(self, sess, url: str) -> bool:
         r = self._get(sess, url, timeout=90, stream=True)
         content, ct = r.content, r.headers.get("content-type", "").lower()
+        log.info("  Downloaded %d bytes, content-type: %s", len(content), ct)
+        if len(content) < 100:
+            log.warning("  File too small (%d bytes) — skipping", len(content))
+            return False
         if "zip" in ct or url.lower().endswith(".zip"):
             try:
                 zf = zipfile.ZipFile(io.BytesIO(content))
+                log.info("  ZIP contains: %s", zf.namelist())
                 for name in zf.namelist():
                     data = zf.read(name)
+                    log.info("  Parsing %s (%d bytes)…", name, len(data))
                     if name.lower().endswith(".dbf"):
                         self._parse_dbf_bytes(data)
                         if self._by_owner: return True
@@ -444,57 +450,21 @@ class ClerkScraper:
                 log.info("  Logon JS result: %s", logon_result)
 
                 if logon_result != 'no_logon_found':
-                    await asyncio.sleep(3)
+                    await asyncio.sleep(2)
                     try:
                         await page.wait_for_load_state("domcontentloaded",
                                                         timeout=10_000)
                     except Exception:
                         pass
 
-                html = await page.content()
-
-                # ── Strategy 2: Click any visible "Enter"/"Continue" links ────
-                for link_text in ["Enter", "Continue", "Proceed", "Guest",
-                                   "Public Access", "Search Records"]:
-                    link = page.locator(
-                        f"a:has-text('{link_text}'), "
-                        f"input[value='{link_text}']"
-                    )
-                    if await link.count() > 0:
-                        log.info("  Clicking '%s' link…", link_text)
-                        await link.first.click()
-                        await asyncio.sleep(2)
-                        html = await page.content()
-                        break
-
-                # ── Strategy 3: Click "Official Public Records" ───────────────
-                opr = page.locator(
-                    "a:has-text('Official Public Records'), "
-                    "a:has-text('OFFICIAL PUBLIC RECORDS'), "
-                    "a:has-text('Real Estate'), "
-                    "a[href*='RealEstate'], a[href*='OfficialPublic']"
-                )
-                if await opr.count() > 0:
-                    log.info("  Clicking OPR link…")
-                    await opr.first.click()
-                    await asyncio.sleep(2)
-                    html = await page.content()
-
-                # ── Strategy 4: Click "Search Real Estate Index" ──────────────
-                sei = page.locator(
-                    "a:has-text('Search Real Estate'), "
-                    "a:has-text('SEARCH REAL ESTATE'), "
-                    "a[href*='SearchEntry']"
-                )
-                if await sei.count() > 0:
-                    log.info("  Clicking Search Real Estate…")
-                    await sei.first.click()
-                    await asyncio.sleep(2)
-                else:
-                    log.info("  Navigating directly to SearchEntry.aspx…")
-                    await page.goto(SEARCH_URL, timeout=20_000,
-                                    wait_until="domcontentloaded")
-                    await asyncio.sleep(1)
+                # ── Navigate DIRECTLY — portal menu links have onclick=false ──
+                # All menu items use onclick="{return false;}" which blocks
+                # Playwright clicks. Direct URL navigation works once the
+                # session cookie is established by the JS logon click above.
+                log.info("  Navigating directly to RealEstate/SearchEntry.aspx…")
+                await page.goto(SEARCH_URL, timeout=25_000,
+                                wait_until="domcontentloaded")
+                await asyncio.sleep(1)
 
                 html = await page.content()
                 log.info("  Current URL: %s", page.url)

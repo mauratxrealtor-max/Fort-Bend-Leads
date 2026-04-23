@@ -1,11 +1,22 @@
 """
 Fort Bend County Motivated Seller Lead Scraper
 ===============================================
-Portal  : https://ccweb.co.fort-bend.tx.us/
-Strategy: Playwright with full session-gate bypass, then search by Date Filed
-          filtered by each document type.  Falls back to a broad date search
-          and post-filters by doc-type keywords.
-Output  : dashboard/records.json  +  data/records.json  +  data/ghl_export.csv
+Portal: https://ccweb.co.fort-bend.tx.us/  (Infovision iGovern system)
+
+The portal has a two-layer gate:
+  Layer 1: Browser-test / connection-throughput page — a JS-driven splash that
+           has a hidden Logon button (id=LoginForm1_btnLogon). Must be submitted
+           via JavaScript, not a visible click.
+  Layer 2: After JS submission, session is established and real estate search
+           is accessible at /RealEstate/SearchEntry.aspx
+
+Strategy:
+  1. Load home page
+  2. Execute JS to submit the hidden logon form directly
+  3. Navigate to SearchEntry.aspx
+  4. Fill date range + doc type, submit, parse results table
+  5. Paginate
+  6. Fallback: broad date-only search if per-type yields nothing
 """
 
 import asyncio
@@ -35,17 +46,16 @@ logging.basicConfig(
 log = logging.getLogger("scraper")
 
 # ── Constants ─────────────────────────────────────────────────────────────────
-BASE_URL    = "https://ccweb.co.fort-bend.tx.us"
-HOME_URL    = "https://ccweb.co.fort-bend.tx.us/"
-SEARCH_URL  = "https://ccweb.co.fort-bend.tx.us/RealEstate/SearchEntry.aspx"
-
-FBCAD_BASE  = "https://www.fbcad.org"
+BASE_URL   = "https://ccweb.co.fort-bend.tx.us"
+HOME_URL   = "https://ccweb.co.fort-bend.tx.us/"
+SEARCH_URL = "https://ccweb.co.fort-bend.tx.us/RealEstate/SearchEntry.aspx"
+FBCAD_BASE = "https://www.fbcad.org"
 
 OUTPUT_PATHS = [
     Path(__file__).parent.parent / "dashboard" / "records.json",
     Path(__file__).parent.parent / "data"      / "records.json",
 ]
-GHL_PATH     = Path(__file__).parent.parent / "data" / "ghl_export.csv"
+GHL_PATH       = Path(__file__).parent.parent / "data" / "ghl_export.csv"
 LOOK_BACK_DAYS = 7
 RETRY_LIMIT    = 3
 
@@ -62,14 +72,14 @@ DOC_TYPES = {
     "LNFED":    ("Federal Lien",            "Federal Lien"),
     "LN":       ("Lien",                    "Lien"),
     "LNMECH":   ("Mechanic Lien",           "Mechanic Lien"),
-    "LNHOA":    ("HOA Lien",               "HOA Lien"),
+    "LNHOA":    ("HOA Lien",                "HOA Lien"),
     "MEDLN":    ("Medicaid Lien",           "Medicaid Lien"),
     "PRO":      ("Probate",                 "Probate"),
     "NOC":      ("Notice of Commencement",  "NOC"),
     "RELLP":    ("Release Lis Pendens",     "Release LP"),
 }
 
-# Keywords used to classify raw doc-type strings from the portal
+# Keywords for classifying raw doc-type strings from portal
 DOC_TYPE_KEYWORDS = {
     "RELLP":    ["RELEASE LIS PENDENS", "REL LIS PENDENS", "RELLP"],
     "LP":       ["LIS PENDENS"],
@@ -84,9 +94,9 @@ DOC_TYPE_KEYWORDS = {
     "LNMECH":   ["MECHANIC", "MATERIALMAN"],
     "LNHOA":    ["HOA", "HOMEOWNER", "HOME OWNER ASSOC"],
     "MEDLN":    ["MEDICAID", "MEDLN"],
-    "PRO":      ["PROBATE", "LETTERS TEST", "LETTERS ADMIN", "WILL"],
-    "NOC":      ["NOTICE OF COMMENCEMENT", " NOC"],
-    "LN":       ["LIEN"],   # broad — checked last
+    "PRO":      ["PROBATE", "LETTERS TEST", "LETTERS ADMIN"],
+    "NOC":      ["NOTICE OF COMMENCEMENT"],
+    "LN":       ["LIEN"],  # broad — checked last
 }
 
 
@@ -109,16 +119,17 @@ def score_record(rec: dict) -> tuple[int, list[str]]:
     except Exception:
         pass
 
-    if cat in ("LP", "RELLP"):         flags.append("Lis pendens")
-    if cat in ("LP", "NOFC"):          flags.append("Pre-foreclosure")
-    if cat in ("JUD", "CCJ", "DRJUD"): flags.append("Judgment lien")
+    if cat in ("LP", "RELLP"):          flags.append("Lis pendens")
+    if cat in ("LP", "NOFC"):           flags.append("Pre-foreclosure")
+    if cat in ("JUD", "CCJ", "DRJUD"):  flags.append("Judgment lien")
     if cat in ("LNCORPTX", "LNIRS", "LNFED", "TAXDEED"): flags.append("Tax lien")
     if cat == "LNMECH":  flags.append("Mechanic lien")
     if cat == "PRO":     flags.append("Probate / estate")
     if re.search(r"\b(LLC|INC|CORP|LTD|LP|TRUST)\b", rec.get("owner", ""), re.I):
         flags.append("LLC / corp owner")
     try:
-        if datetime.strptime(rec.get("filed", ""), "%Y-%m-%d") >= datetime.now() - timedelta(days=7):
+        if datetime.strptime(rec.get("filed", ""), "%Y-%m-%d") >= \
+                datetime.now() - timedelta(days=7):
             flags.append("New this week")
     except Exception:
         pass
@@ -133,13 +144,13 @@ def score_record(rec: dict) -> tuple[int, list[str]]:
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-#  PARCEL DB  (Fort Bend CAD bulk data)
+#  PARCEL DB
 # ═══════════════════════════════════════════════════════════════════════════════
 class ParcelDB:
     BULK_URLS = [
         "https://www.fbcad.org/Property-Data/Bulk-Data-Downloads/",
-        "https://downloads.fbcad.org/",
         "https://www.fbcad.org/resources/bulk-data/",
+        "https://www.fbcad.org/data/",
     ]
 
     def __init__(self):
@@ -149,13 +160,13 @@ class ParcelDB:
     def load(self):
         for url in self.BULK_URLS:
             try:
-                log.info("Trying FBCAD bulk data: %s", url)
+                log.info("Trying FBCAD: %s", url)
                 if self._try_load_from_page(url):
                     log.info("Parcel DB loaded — %d records", len(self._by_owner))
                     self._loaded = True
                     return
             except Exception as e:
-                log.warning("FBCAD %s failed: %s", url, e)
+                log.warning("FBCAD %s: %s", url, e)
         log.warning("Parcel DB unavailable — address enrichment skipped")
 
     def lookup(self, owner: str) -> Optional[dict]:
@@ -169,6 +180,7 @@ class ParcelDB:
 
     def _try_load_from_page(self, page_url: str) -> bool:
         sess = requests.Session()
+        sess.verify = False  # handle cert issues
         r = self._get(sess, page_url, timeout=20)
         soup = BeautifulSoup(r.text, "lxml")
         for a in soup.find_all("a", href=True):
@@ -189,10 +201,10 @@ class ParcelDB:
                     data = zf.read(name)
                     if name.lower().endswith(".dbf"):
                         self._parse_dbf_bytes(data)
-                        return bool(self._by_owner)
+                        if self._by_owner: return True
                     if name.lower().endswith(".csv"):
                         self._parse_csv_bytes(data)
-                        return bool(self._by_owner)
+                        if self._by_owner: return True
             except Exception as e:
                 log.warning("ZIP: %s", e)
         elif url.lower().endswith(".dbf"):
@@ -207,8 +219,7 @@ class ParcelDB:
         try:
             import tempfile
             with tempfile.NamedTemporaryFile(delete=False, suffix=".dbf") as f:
-                f.write(data)
-                tmp = f.name
+                f.write(data); tmp = f.name
             try:
                 from dbfread import DBF
                 for rec in DBF(tmp, encoding="latin-1", load=True):
@@ -220,25 +231,20 @@ class ParcelDB:
 
     def _parse_dbf_raw(self, data: bytes):
         try:
-            if len(data) < 32:
-                return
+            if len(data) < 32: return
             num_recs  = struct.unpack_from("<I", data, 4)[0]
             hdr_bytes = struct.unpack_from("<H", data, 8)[0]
             rec_size  = struct.unpack_from("<H", data, 10)[0]
             fields, pos = [], 32
             while pos < hdr_bytes - 1:
-                if data[pos] == 0x0D:
-                    break
+                if data[pos] == 0x0D: break
                 name = data[pos:pos+11].rstrip(b"\x00").decode("latin-1")
                 flen = data[pos+16]
-                fields.append((name, flen))
-                pos += 32
+                fields.append((name, flen)); pos += 32
             for i in range(num_recs):
                 rs = hdr_bytes + i * rec_size
-                if rs + rec_size > len(data):
-                    break
-                if data[rs] == 0x2A:
-                    continue
+                if rs + rec_size > len(data): break
+                if data[rs] == 0x2A: continue
                 row, col = {}, rs + 1
                 for fname, flen in fields:
                     row[fname] = data[col:col+flen].decode("latin-1").strip()
@@ -249,7 +255,8 @@ class ParcelDB:
 
     def _parse_csv_bytes(self, data: bytes):
         try:
-            reader = csv.DictReader(io.StringIO(data.decode("latin-1", errors="replace")))
+            reader = csv.DictReader(
+                io.StringIO(data.decode("latin-1", errors="replace")))
             for row in reader:
                 self._ingest_row(row)
         except Exception as e:
@@ -259,17 +266,16 @@ class ParcelDB:
         r = {k.upper().strip(): str(v).strip() for k, v in row.items()}
         owner = (r.get("OWNER") or r.get("OWN1") or r.get("OWNER_NAME") or
                  r.get("OWNERNAME") or "").strip()
-        if not owner:
-            return
+        if not owner: return
         parcel = {
-            "prop_address": r.get("SITE_ADDR") or r.get("SITEADDR") or r.get("SITE_ADDRESS") or "",
+            "prop_address": r.get("SITE_ADDR") or r.get("SITEADDR") or "",
             "prop_city":    r.get("SITE_CITY") or r.get("SITECITY") or "",
             "prop_state":   "TX",
-            "prop_zip":     r.get("SITE_ZIP") or r.get("SITEZIP") or "",
-            "mail_address": r.get("ADDR_1") or r.get("MAILADR1") or r.get("MAILADDR1") or "",
-            "mail_city":    r.get("CITY") or r.get("MAILCITY") or "",
-            "mail_state":   r.get("STATE") or r.get("MAILSTATE") or "TX",
-            "mail_zip":     r.get("ZIP") or r.get("MAILZIP") or "",
+            "prop_zip":     r.get("SITE_ZIP")  or r.get("SITEZIP")  or "",
+            "mail_address": r.get("ADDR_1") or r.get("MAILADR1") or "",
+            "mail_city":    r.get("CITY")   or r.get("MAILCITY") or "",
+            "mail_state":   r.get("STATE")  or r.get("MAILSTATE") or "TX",
+            "mail_zip":     r.get("ZIP")    or r.get("MAILZIP")   or "",
         }
         for v in self._name_variants(owner):
             self._by_owner.setdefault(v, parcel)
@@ -297,8 +303,7 @@ class ParcelDB:
                 r.raise_for_status()
                 return r
             except Exception as e:
-                if attempt == RETRY_LIMIT - 1:
-                    raise
+                if attempt == RETRY_LIMIT - 1: raise
                 time.sleep(2 ** attempt)
 
 
@@ -307,13 +312,14 @@ class ParcelDB:
 # ═══════════════════════════════════════════════════════════════════════════════
 class ClerkScraper:
     """
-    Fort Bend County Clerk portal scraper.
+    Handles the Infovision iGovern session gate at ccweb.co.fort-bend.tx.us.
 
-    Session gate flow:
-      GET /  →  click "Official Public Records"  →  click "Search Real Estate"
-      →  fill date + doc type  →  parse results table  →  paginate
-
-    Falls back to a broad date-only search if per-type search yields nothing.
+    Key insight from the error log:
+      - The page has a hidden <input id="LoginForm1_btnLogon"> that cannot be
+        clicked normally (element is not visible).
+      - The fix: use page.evaluate() to call .click() directly on the DOM element,
+        bypassing Playwright's visibility check. This submits the session form
+        and establishes a valid server-side session cookie.
     """
 
     def __init__(self, parcel_db: ParcelDB):
@@ -323,7 +329,7 @@ class ClerkScraper:
     async def run(self):
         date_from = (datetime.now() - timedelta(days=LOOK_BACK_DAYS)).strftime("%m/%d/%Y")
         date_to   = datetime.now().strftime("%m/%d/%Y")
-        log.info("Fort Bend Clerk search window: %s → %s", date_from, date_to)
+        log.info("Search window: %s → %s", date_from, date_to)
 
         async with async_playwright() as pw:
             browser = await pw.chromium.launch(
@@ -342,198 +348,258 @@ class ClerkScraper:
             )
             await ctx.add_init_script(
                 "Object.defineProperty(navigator,'webdriver',{get:()=>undefined});"
-                "Object.defineProperty(navigator,'plugins',{get:()=>[1,2,3]});"
-                "window.chrome={runtime:{}};"
             )
             page = await ctx.new_page()
 
-            # ── Step 1: navigate through the session gate ─────────────────────
-            reached_form = await self._navigate_to_search(page)
-            if not reached_form:
-                log.error("Could not reach search form — aborting")
+            # Establish session
+            ok = await self._establish_session(page)
+            if not ok:
+                log.error("Could not establish session — aborting")
                 await browser.close()
                 return
 
-            # ── Step 2: discover available dropdown options ───────────────────
-            available_opts = await self._get_dropdown_options(page)
-            log.info("Portal dropdown has %d instrument types", len(available_opts))
+            # Discover dropdown options once
+            dropdown_opts = await self._get_dropdown_options(page)
+            log.info("Dropdown options available: %d", len(dropdown_opts))
+            if dropdown_opts:
+                log.info("  Sample options: %s", list(dropdown_opts.keys())[:8])
 
-            # ── Step 3: search per doc type ───────────────────────────────────
+            # Search per doc type
             found_any = False
             for code, (label, _) in DOC_TYPES.items():
                 for attempt in range(RETRY_LIMIT):
                     try:
                         recs = await self._search_one(
-                            page, code, label, available_opts, date_from, date_to
+                            page, code, label, dropdown_opts, date_from, date_to
                         )
                         if recs:
                             found_any = True
                         self.records.extend(recs)
-                        log.info("  [%s] %s: %d records", code, label, len(recs))
+                        log.info("  [%s] %s: %d", code, label, len(recs))
                         break
                     except PWTimeout:
                         log.warning("  Timeout [%s] attempt %d", code, attempt + 1)
                         await asyncio.sleep(3)
-                        await self._navigate_to_search(page)
+                        await self._establish_session(page)
                     except Exception as e:
                         log.warning("  Error [%s]: %s", code, e)
                         break
 
-            # ── Step 4: broad fallback if nothing found ───────────────────────
+            # Broad fallback
             if not found_any:
-                log.info("Per-type search yielded 0 — running broad date search…")
-                broad_recs = await self._broad_date_search(page, date_from, date_to)
-                self.records.extend(broad_recs)
-                log.info("Broad search: %d records", len(broad_recs))
+                log.info("Per-type search got 0 — trying broad date-range search…")
+                broad = await self._broad_search(page, date_from, date_to)
+                self.records.extend(broad)
+                log.info("Broad search: %d records", len(broad))
 
             await browser.close()
+        log.info("Scraper done — %d total raw records", len(self.records))
 
-        log.info("Scraper finished — %d total raw records", len(self.records))
-
-    # ── Session navigation ────────────────────────────────────────────────────
-    async def _navigate_to_search(self, page) -> bool:
-        """Navigate from the portal home through the session gate to the search form."""
-        log.info("Navigating to Fort Bend Clerk search form…")
+    # ── Session gate ──────────────────────────────────────────────────────────
+    async def _establish_session(self, page) -> bool:
+        """
+        Navigate the Infovision iGovern session gate.
+        The hidden Logon button must be triggered via JS .click() not Playwright click.
+        """
+        log.info("Establishing session…")
         for attempt in range(RETRY_LIMIT):
             try:
-                await page.goto(HOME_URL, timeout=30_000, wait_until="domcontentloaded")
+                await page.goto(HOME_URL, timeout=30_000,
+                                wait_until="domcontentloaded")
                 await asyncio.sleep(2)
+
+                html = await page.content()
+                log.info("  Home page loaded (%d chars)", len(html))
+
+                # ── Strategy 1: JS-click the hidden Logon button ──────────────
+                # This is the exact element that was failing: LoginForm1_btnLogon
+                logon_result = await page.evaluate("""() => {
+                    // Try by ID first
+                    let btn = document.getElementById('LoginForm1_btnLogon');
+                    if (btn) { btn.click(); return 'clicked_by_id'; }
+
+                    // Try by name
+                    btn = document.querySelector('[name*="btnLogon"]');
+                    if (btn) { btn.click(); return 'clicked_by_name'; }
+
+                    // Try submitting the form directly
+                    let form = document.getElementById('LoginForm1');
+                    if (form) { form.submit(); return 'form_submitted'; }
+
+                    // Try any form with logon
+                    for (let f of document.forms) {
+                        if (f.id && f.id.toLowerCase().includes('login')) {
+                            f.submit(); return 'login_form_submitted';
+                        }
+                    }
+
+                    // Try __doPostBack
+                    if (typeof __doPostBack !== 'undefined') {
+                        __doPostBack('LoginForm1$btnLogon', '');
+                        return 'dopostback';
+                    }
+
+                    return 'no_logon_found';
+                }""")
+                log.info("  Logon JS result: %s", logon_result)
+
+                if logon_result != 'no_logon_found':
+                    await asyncio.sleep(3)
+                    try:
+                        await page.wait_for_load_state("domcontentloaded",
+                                                        timeout=10_000)
+                    except Exception:
+                        pass
+
                 html = await page.content()
 
-                # Handle browser-test / session splash
-                if any(kw in html.lower() for kw in
-                       ["browser test", "keep working", "session will end",
-                        "connection throughput"]):
-                    log.info("  Session gate detected — clicking through…")
-                    for label in ["Keep Working", "Continue", "Enter", "Proceed",
-                                  "Accept", "Yes"]:
-                        btn = page.locator(
-                            f"input[value='{label}'], "
-                            f"input[value='{label.upper()}'], "
-                            f"button:has-text('{label}')"
-                        )
-                        if await btn.count() > 0:
-                            await btn.first.click()
-                            await asyncio.sleep(2)
-                            break
-                    else:
-                        # Click any submit button
-                        sub = page.locator("input[type='submit'], button[type='submit']")
-                        if await sub.count() > 0:
-                            await sub.first.click()
-                            await asyncio.sleep(2)
-                    html = await page.content()
+                # ── Strategy 2: Click any visible "Enter"/"Continue" links ────
+                for link_text in ["Enter", "Continue", "Proceed", "Guest",
+                                   "Public Access", "Search Records"]:
+                    link = page.locator(
+                        f"a:has-text('{link_text}'), "
+                        f"input[value='{link_text}']"
+                    )
+                    if await link.count() > 0:
+                        log.info("  Clicking '%s' link…", link_text)
+                        await link.first.click()
+                        await asyncio.sleep(2)
+                        html = await page.content()
+                        break
 
-                # Click "Official Public Records"
+                # ── Strategy 3: Click "Official Public Records" ───────────────
                 opr = page.locator(
                     "a:has-text('Official Public Records'), "
                     "a:has-text('OFFICIAL PUBLIC RECORDS'), "
-                    "a[href*='OfficialPublic'], a[href*='RealEstate']"
+                    "a:has-text('Real Estate'), "
+                    "a[href*='RealEstate'], a[href*='OfficialPublic']"
                 )
                 if await opr.count() > 0:
+                    log.info("  Clicking OPR link…")
                     await opr.first.click()
-                    await page.wait_for_load_state("domcontentloaded", timeout=15_000)
-                    await asyncio.sleep(1)
+                    await asyncio.sleep(2)
+                    html = await page.content()
 
-                # Click "Search Real Estate Index"
+                # ── Strategy 4: Click "Search Real Estate Index" ──────────────
                 sei = page.locator(
                     "a:has-text('Search Real Estate'), "
                     "a:has-text('SEARCH REAL ESTATE'), "
                     "a[href*='SearchEntry']"
                 )
                 if await sei.count() > 0:
+                    log.info("  Clicking Search Real Estate…")
                     await sei.first.click()
-                    await page.wait_for_load_state("domcontentloaded", timeout=15_000)
-                    await asyncio.sleep(1)
+                    await asyncio.sleep(2)
                 else:
+                    log.info("  Navigating directly to SearchEntry.aspx…")
                     await page.goto(SEARCH_URL, timeout=20_000,
                                     wait_until="domcontentloaded")
                     await asyncio.sleep(1)
 
                 html = await page.content()
+                log.info("  Current URL: %s", page.url)
+                log.info("  Page snippet: %s",
+                         html[:300].replace('\n', ' ').replace('\r', ''))
+
                 if self._is_search_form(html):
-                    log.info("  ✓ Search form reached")
+                    log.info("  ✓ Search form confirmed!")
                     return True
 
-                # Direct navigation as last resort
-                await page.goto(SEARCH_URL, timeout=20_000, wait_until="domcontentloaded")
+                # Last resort: force direct navigation
+                await page.goto(SEARCH_URL, timeout=20_000,
+                                wait_until="domcontentloaded")
                 await asyncio.sleep(1)
-                if self._is_search_form(await page.content()):
-                    log.info("  ✓ Direct navigation succeeded")
+                html = await page.content()
+                if self._is_search_form(html):
+                    log.info("  ✓ Direct navigation succeeded!")
                     return True
 
-            except Exception as e:
-                log.warning("  Navigation attempt %d failed: %s", attempt + 1, e)
+                log.warning("  Attempt %d: form not confirmed, retrying…",
+                            attempt + 1)
                 await asyncio.sleep(3)
 
-        return False
+            except Exception as e:
+                log.warning("  Session attempt %d failed: %s", attempt + 1, e)
+                await asyncio.sleep(3)
+
+        # Even if we can't confirm, try anyway
+        log.warning("Could not confirm search form — attempting search anyway")
+        return True
 
     @staticmethod
     def _is_search_form(html: str) -> bool:
         h = html.lower()
-        return (("date" in h or "instrument" in h) and
-                ("search" in h or "grantor" in h or "party" in h))
+        return any(kw in h for kw in
+                   ["date filed", "instrument type", "doc type",
+                    "grantor", "party name", "searchentry",
+                    "file date", "recorded date"])
 
+    # ── Discover dropdown ─────────────────────────────────────────────────────
     async def _get_dropdown_options(self, page) -> dict[str, str]:
-        """Return {UPPER_TEXT: value} from the instrument-type dropdown."""
         for sel_pat in [
             "select[name*='InstrumentType']", "select[name*='DocType']",
             "select[name*='Type']",            "select[id*='Instrument']",
-            "select[id*='DocType']",
+            "select[id*='Doc']",
         ]:
             sel = page.locator(sel_pat)
             if await sel.count() > 0:
                 opts = await sel.first.evaluate("""el => Array.from(el.options).map(o => ({
                     text: o.text.trim(), value: o.value.trim()
                 }))""")
-                return {o["text"].upper(): (o["value"] or o["text"])
-                        for o in opts
-                        if o["text"] and o["text"].upper() not in
-                        ("", "-- SELECT --", "SELECT TYPE", "ALL TYPES", "ALL")}
+                result = {}
+                for o in opts:
+                    t = o["text"].upper()
+                    if t and t not in ("", "-- SELECT --", "SELECT TYPE",
+                                       "ALL TYPES", "ALL", "SELECT"):
+                        result[t] = o["value"] or o["text"]
+                return result
         return {}
 
     # ── Per-type search ───────────────────────────────────────────────────────
     async def _search_one(self, page, code: str, label: str,
-                           available_opts: dict, date_from: str, date_to: str) -> list[dict]:
+                           dropdown_opts: dict,
+                           date_from: str, date_to: str) -> list[dict]:
         await page.goto(SEARCH_URL, timeout=20_000, wait_until="domcontentloaded")
         await asyncio.sleep(0.5)
 
         html = await page.content()
-        # Re-establish session if expired
-        if "session" in html.lower() and "end" in html.lower():
-            await self._navigate_to_search(page)
-            await page.goto(SEARCH_URL, timeout=20_000, wait_until="domcontentloaded")
+        # Re-establish if session expired
+        if ("must be logged" in html.lower() or
+                "session" in html.lower() and "expired" in html.lower()):
+            await self._establish_session(page)
+            await page.goto(SEARCH_URL, timeout=20_000,
+                            wait_until="domcontentloaded")
             await asyncio.sleep(0.5)
 
-        # Fill dates
         await self._fill_dates(page, date_from, date_to)
-
-        # Fill doc type
-        type_set = await self._fill_doc_type(page, code, label, available_opts)
-
-        # Submit
+        type_set = await self._fill_doc_type(page, code, label, dropdown_opts)
         await self._submit(page)
         await asyncio.sleep(1)
-
         return await self._paginate(page, code, label, type_set)
 
     async def _fill_dates(self, page, date_from: str, date_to: str):
-        for patterns, value in [
+        pairs = [
             (["DateFrom", "StartDate", "BeginDate", "FromDate",
-              "FileDateFrom", "RecordedDateFrom"], date_from),
-            (["DateTo",   "EndDate",   "ToDate",
-              "FileDateTo",   "RecordedDateTo"],   date_to),
-        ]:
+              "FileDateFrom", "RecordedDateFrom", "dtFrom", "txtFrom"],
+             date_from),
+            (["DateTo", "EndDate", "ToDate",
+              "FileDateTo", "RecordedDateTo", "dtTo", "txtTo"],
+             date_to),
+        ]
+        for patterns, value in pairs:
             for p in patterns:
-                fld = page.locator(f"input[name*='{p}'], input[id*='{p}']")
+                fld = page.locator(
+                    f"input[name*='{p}'], input[id*='{p}']"
+                )
                 if await fld.count() > 0:
                     await fld.first.triple_click()
                     await fld.first.fill(value)
+                    log.debug("  Date field '%s' = %s", p, value)
                     break
 
     async def _fill_doc_type(self, page, code: str, label: str,
-                              available_opts: dict) -> bool:
-        candidates = DOC_TYPE_KEYWORDS.get(code, [label.upper()])
+                              dropdown_opts: dict) -> bool:
+        candidates = DOC_TYPE_KEYWORDS.get(code, []) + [label.upper()]
         for sel_pat in [
             "select[name*='InstrumentType']", "select[name*='DocType']",
             "select[name*='Type']",            "select[id*='Instrument']",
@@ -541,8 +607,7 @@ class ClerkScraper:
             sel = page.locator(sel_pat)
             if await sel.count() == 0:
                 continue
-            # Match against available options
-            for opt_text, opt_val in available_opts.items():
+            for opt_text, opt_val in dropdown_opts.items():
                 for cand in candidates:
                     if cand.upper() in opt_text or opt_text in cand.upper():
                         try:
@@ -550,32 +615,40 @@ class ClerkScraper:
                             return True
                         except Exception:
                             pass
-            # Partial word match fallback
-            label_words = [w for w in label.upper().split() if len(w) > 3]
-            for opt_text, opt_val in available_opts.items():
-                if any(w in opt_text for w in label_words):
-                    try:
-                        await sel.first.select_option(value=opt_val)
-                        return True
-                    except Exception:
-                        pass
+            # Partial word fallback
+            for word in label.upper().split():
+                if len(word) < 4:
+                    continue
+                for opt_text, opt_val in dropdown_opts.items():
+                    if word in opt_text:
+                        try:
+                            await sel.first.select_option(value=opt_val)
+                            return True
+                        except Exception:
+                            pass
         return False
 
     async def _submit(self, page):
         for pat in [
             "input[value='Search']", "input[value='SEARCH']",
+            "input[value='Search Records']",
             "input[id*='Search'][type='submit']",
-            "button:has-text('Search')", "input[type='submit']",
+            "button:has-text('Search')",
+            "input[type='submit']",
         ]:
             btn = page.locator(pat)
             if await btn.count() > 0:
                 await btn.first.click()
                 try:
-                    await page.wait_for_load_state("domcontentloaded", timeout=20_000)
+                    await page.wait_for_load_state("domcontentloaded",
+                                                    timeout=20_000)
                 except PWTimeout:
                     pass
                 return
-        await page.keyboard.press("Enter")
+        # JS fallback
+        await page.evaluate(
+            "document.querySelector('input[type=\"submit\"]')?.click()"
+        )
         await asyncio.sleep(2)
 
     async def _paginate(self, page, code: str, label: str,
@@ -584,7 +657,6 @@ class ClerkScraper:
         while True:
             recs = self._parse_table(await page.content(), code, label, exact)
             all_recs.extend(recs)
-
             next_btn = page.locator(
                 "a:has-text('Next'), a:has-text('>>'), "
                 "input[value*='Next >'], a[id*='Next'], a[id*='next']"
@@ -593,7 +665,8 @@ class ClerkScraper:
                 break
             try:
                 await next_btn.first.click()
-                await page.wait_for_load_state("domcontentloaded", timeout=15_000)
+                await page.wait_for_load_state("domcontentloaded",
+                                                timeout=15_000)
                 await asyncio.sleep(0.6)
             except Exception:
                 break
@@ -603,7 +676,7 @@ class ClerkScraper:
         return all_recs
 
     # ── Broad date search fallback ────────────────────────────────────────────
-    async def _broad_date_search(self, page, date_from: str, date_to: str) -> list[dict]:
+    async def _broad_search(self, page, date_from: str, date_to: str) -> list[dict]:
         await page.goto(SEARCH_URL, timeout=20_000, wait_until="domcontentloaded")
         await asyncio.sleep(0.5)
         await self._fill_dates(page, date_from, date_to)
@@ -615,28 +688,26 @@ class ClerkScraper:
     # ── HTML table parser ─────────────────────────────────────────────────────
     def _parse_table(self, html: str, code: str, label: str,
                      exact_type: bool) -> list[dict]:
-        soup    = BeautifulSoup(html, "lxml")
-        today   = datetime.now()
-        records = []
+        soup  = BeautifulSoup(html, "lxml")
+        today = datetime.now()
+        recs  = []
 
-        # Find the results table (skip layout tables)
         target = None
         for tbl in soup.find_all("table"):
             cells = tbl.find_all(["th", "td"])
             if len(cells) < 4:
                 continue
-            cell_text = " ".join(c.get_text(strip=True).lower() for c in cells[:25])
-            if any(kw in cell_text for kw in
+            txt = " ".join(c.get_text(strip=True).lower() for c in cells[:25])
+            if any(kw in txt for kw in
                    ["grantor", "grantee", "instrument", "filed", "recorded"]):
                 target = tbl
                 break
         if not target:
-            return records
+            return recs
 
-        # Detect columns from header row
         hrow = target.find("tr")
         if not hrow:
-            return records
+            return recs
 
         col_map = {}
         for i, cell in enumerate(hrow.find_all(["th", "td"])):
@@ -645,7 +716,7 @@ class ClerkScraper:
                 col_map.setdefault("doc_num", i)
             elif re.search(r"(instrument|doc(ument)?)\s*type|type", h):
                 col_map.setdefault("doc_type", i)
-            elif re.search(r"(file|record)(ed)?\s*date|date\s*(file|record)", h):
+            elif re.search(r"(file|record)(ed)?\s*date|date", h):
                 col_map.setdefault("filed", i)
             elif re.search(r"grantor|party\s*1|seller|owner", h):
                 col_map.setdefault("owner", i)
@@ -656,12 +727,9 @@ class ClerkScraper:
             elif re.search(r"amount|consider|price|value", h):
                 col_map.setdefault("amount", i)
 
-        # Fallback: assume Fort Bend typical column order
         if not col_map:
-            col_map = {
-                "doc_num": 0, "doc_type": 1, "filed": 2,
-                "owner": 3, "grantee": 4, "legal": 5, "amount": 6,
-            }
+            col_map = {"doc_num": 0, "doc_type": 1, "filed": 2,
+                       "owner": 3, "grantee": 4, "legal": 5, "amount": 6}
 
         for tr in target.find_all("tr")[1:]:
             try:
@@ -672,7 +740,8 @@ class ClerkScraper:
 
                 def _get(key, default=""):
                     idx = col_map.get(key)
-                    return texts[idx].strip() if idx is not None and idx < len(texts) else default
+                    return texts[idx].strip() \
+                        if idx is not None and idx < len(texts) else default
 
                 doc_num      = _get("doc_num") or (texts[0] if texts else "")
                 raw_doc_type = _get("doc_type")
@@ -680,42 +749,41 @@ class ClerkScraper:
                 raw_owner    = _get("owner")
 
                 if not doc_num.strip() or re.match(
-                        r"^(instrument\s*#|doc\s*#|num|no\.?)$",
+                        r"^(instrument\s*#?|doc\s*#?|num|no\.?)$",
                         doc_num.strip(), re.I):
                     continue
 
-                # Parse date
                 filed_str = ""
                 for fmt in ("%m/%d/%Y", "%Y-%m-%d", "%m-%d-%Y"):
                     try:
-                        filed_str = datetime.strptime(raw_date.strip(), fmt).strftime("%Y-%m-%d")
+                        filed_str = datetime.strptime(
+                            raw_date.strip(), fmt).strftime("%Y-%m-%d")
                         break
                     except Exception:
                         pass
                 if not filed_str:
                     continue
 
-                # Skip outside window
                 try:
-                    if (today - datetime.strptime(filed_str, "%Y-%m-%d")).days > LOOK_BACK_DAYS + 1:
+                    if (today - datetime.strptime(
+                            filed_str, "%Y-%m-%d")).days > LOOK_BACK_DAYS + 1:
                         continue
                 except Exception:
                     continue
 
-                # Classify doc type
                 if exact_type:
                     rec_code, rec_label = code, label
                 else:
                     rec_code, rec_label = classify_doc_type(raw_doc_type or label)
 
-                # Build direct clerk URL
                 doc_idx = col_map.get("doc_num", 0)
                 link = ""
                 if doc_idx < len(cells):
                     a = cells[doc_idx].find("a")
                     if a and a.get("href"):
                         href = a["href"]
-                        link = href if href.startswith("http") else BASE_URL + "/" + href.lstrip("/")
+                        link = (href if href.startswith("http")
+                                else BASE_URL + "/" + href.lstrip("/"))
 
                 rec = {
                     "doc_num":      doc_num.strip(),
@@ -737,18 +805,14 @@ class ClerkScraper:
                     "mail_state":   "TX",
                     "mail_zip":     "",
                 }
-
                 parcel = self.parcel_db.lookup(raw_owner)
                 if parcel:
                     rec.update({k: v for k, v in parcel.items() if v})
-
                 rec["flags"], rec["score"] = score_record(rec)
-                records.append(rec)
-
+                recs.append(rec)
             except Exception as e:
                 log.debug("Row error: %s", e)
-
-        return records
+        return recs
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -759,8 +823,7 @@ def deduplicate(records: list[dict]) -> list[dict]:
     for r in records:
         key = (r.get("doc_num", ""), r.get("cat", ""), r.get("filed", ""))
         if key not in seen:
-            seen.add(key)
-            out.append(r)
+            seen.add(key); out.append(r)
     return out
 
 
@@ -768,7 +831,7 @@ def build_output(records: list[dict]) -> dict:
     now = datetime.utcnow()
     return {
         "fetched_at":   now.isoformat() + "Z",
-        "source":       "Fort Bend County Clerk (ccweb.co.fort-bend.tx.us) + Fort Bend CAD",
+        "source":       "Fort Bend County Clerk + Fort Bend CAD",
         "date_range":   {
             "from": (now - timedelta(days=LOOK_BACK_DAYS)).strftime("%Y-%m-%d"),
             "to":   now.strftime("%Y-%m-%d"),
@@ -776,7 +839,8 @@ def build_output(records: list[dict]) -> dict:
         "total":        len(records),
         "with_address": sum(1 for r in records
                             if r.get("prop_address") or r.get("mail_address")),
-        "records":      sorted(records, key=lambda x: x.get("score", 0), reverse=True),
+        "records":      sorted(records,
+                               key=lambda x: x.get("score", 0), reverse=True),
     }
 
 
@@ -840,9 +904,10 @@ async def main():
 
     scraper = ClerkScraper(parcel_db)
     await scraper.run()
-    records = deduplicate(scraper.records)
 
+    records = deduplicate(scraper.records)
     log.info("After dedup: %d records", len(records))
+
     output = build_output(records)
     save_json(output)
     save_ghl_csv(records)

@@ -1,9 +1,9 @@
 {
-  "fetched_at": "2026-04-22T15:59:53.022357Z",
+  "fetched_at": "2026-04-23T11:00:20.343800Z",
   "source": "Harris County Clerk + Fort Bend CAD",
   "date_range": {
-    "from": "2026-04-15",
-    "to": "2026-04-22"
+    "from": "2026-04-16",
+    "to": "2026-04-23"
   },
   "total": 0,
   "with_address": 0,

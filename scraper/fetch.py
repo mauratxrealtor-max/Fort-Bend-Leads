@@ -654,81 +654,84 @@ class ClerkScraper:
                     pass
 
     async def _fill_dates(self, page, date_from: str, date_to: str):
-        pairs = [
-            (["DateFrom", "StartDate", "BeginDate", "FromDate",
-              "FileDateFrom", "RecordedDateFrom", "dtFrom", "txtFrom"],
-             date_from),
-            (["DateTo", "EndDate", "ToDate",
-              "FileDateTo", "RecordedDateTo", "dtTo", "txtTo"],
-             date_to),
-        ]
-        for patterns, value in pairs:
-            for p in patterns:
-                fld = page.locator(
-                    f"input[name*='{p}'], input[id*='{p}']"
-                )
-                if await fld.count() > 0:
-                    await fld.first.triple_click()
-                    await fld.first.fill(value)
-                    log.debug("  Date field '%s' = %s", p, value)
-                    break
+        """
+        Fort Bend date fields have no name/id — they are JS datepicker widgets.
+        We fill them via JavaScript by finding inputs with placeholder mm/dd/yyyy.
+        """
+        result = await page.evaluate(f"""() => {{
+            const inputs = Array.from(document.querySelectorAll('input[type=text],input:not([type])'));
+            const dateInputs = inputs.filter(i =>
+                i.value === 'mm/dd/yyyy' ||
+                i.placeholder === 'mm/dd/yyyy' ||
+                (i.id && i.id.toLowerCase().includes('date')) ||
+                (i.name && i.name.toLowerCase().includes('date'))
+            );
+            if (dateInputs.length >= 2) {{
+                dateInputs[0].value = '{date_from}';
+                dateInputs[0].dispatchEvent(new Event('change', {{bubbles:true}}));
+                dateInputs[0].dispatchEvent(new Event('blur', {{bubbles:true}}));
+                dateInputs[1].value = '{date_to}';
+                dateInputs[1].dispatchEvent(new Event('change', {{bubbles:true}}));
+                dateInputs[1].dispatchEvent(new Event('blur', {{bubbles:true}}));
+                return 'filled_' + dateInputs.length + '_date_fields';
+            }}
+            // Fallback: try all inputs with mm/dd/yyyy value
+            const all = inputs.filter(i => i.value === 'mm/dd/yyyy');
+            if (all.length >= 2) {{
+                all[0].value = '{date_from}';
+                all[0].dispatchEvent(new Event('change', {{bubbles:true}}));
+                all[1].value = '{date_to}';
+                all[1].dispatchEvent(new Event('change', {{bubbles:true}}));
+                return 'filled_by_placeholder_' + all.length;
+            }}
+            return 'no_date_fields_found: ' + inputs.map(i=>i.name+'|'+i.id+'|'+i.value).join(', ');
+        }}""")
+        log.info("  Date fill result: %s", result)
 
     async def _fill_doc_type(self, page, code: str, label: str,
                               dropdown_opts: dict) -> bool:
         """
-        The Fort Bend portal search form has a text field for the search value.
-        We type the document type keyword into it and set match type to CONTAINS.
+        Fort Bend form dump revealed:
+          - Doc type text field: id="cphNoMargin_f_DataTextEdit1"
+          - Search method select: id="cphNoMargin_f_ddlSearchType"
+            options: CONTAINS, BEGINS WITH, EXACT MATCH, SOUNDS LIKE
+        We type the doc type keyword and set method to CONTAINS.
         """
-        # Set match type to CONTAINS so partial doc-type keywords work
-        for sel_pat in ["select[name*='Match']", "select[id*='Match']",
-                        "select[name*='SearchType']", "select[id*='SearchType']",
-                        "select"]:
-            sel = page.locator(sel_pat)
-            if await sel.count() > 0:
-                try:
-                    await sel.first.select_option(label="CONTAINS")
-                    break
-                except Exception:
-                    try:
-                        await sel.first.select_option(index=1)  # usually CONTAINS
-                        break
-                    except Exception:
-                        pass
-
-        # Try to find a Document Type specific input or a generic search field
-        # Fort Bend form fields: DocType, InstrumentType, SearchValue, txtSearch etc.
         search_term = DOC_TYPE_KEYWORDS.get(code, [label])[0]
 
+        # Set search method to CONTAINS
+        method_sel = page.locator(
+            "select[id='cphNoMargin_f_ddlSearchType'], "
+            "select[name='ctl00$cphNoMargin$f$ddlSearchType']"
+        )
+        if await method_sel.count() > 0:
+            try:
+                await method_sel.first.select_option(value="CONTAINS")
+            except Exception:
+                pass
+
+        # Fill the document type text field — exact id from form dump
+        doc_field = page.locator(
+            "input[id='cphNoMargin_f_DataTextEdit1'], "
+            "input[name='cphNoMargin_f_DataTextEdit1']"
+        )
+        if await doc_field.count() > 0:
+            await doc_field.first.click()
+            await doc_field.first.fill(search_term)
+            log.info("  Doc type field set to: %s", search_term)
+            return True
+
+        # Fallback: try any text input not already filled
         for inp_pat in [
-            "input[name*='DocType']", "input[id*='DocType']",
-            "input[name*='InstrumentType']", "input[id*='InstrumentType']",
-            "input[name*='SearchValue']", "input[id*='SearchValue']",
-            "input[name*='txtSearch']", "input[id*='txtSearch']",
-            "input[name*='SearchText']",
+            "input[name*='DataTextEdit']",
+            "input[name*='DocType']",
+            "input[name*='InstrumentType']",
         ]:
             inp = page.locator(inp_pat)
             if await inp.count() > 0:
-                await inp.first.triple_click()
+                await inp.first.click()
                 await inp.first.fill(search_term)
-                log.debug("  Filled search field '%s' = '%s'", inp_pat, search_term)
                 return True
-
-        # If dropdown exists with instrument types, use it
-        if dropdown_opts:
-            candidates = DOC_TYPE_KEYWORDS.get(code, []) + [label.upper()]
-            for sel_pat in ["select[name*='InstrumentType']", "select[name*='DocType']",
-                            "select[name*='Type']"]:
-                sel = page.locator(sel_pat)
-                if await sel.count() == 0:
-                    continue
-                for opt_text, opt_val in dropdown_opts.items():
-                    for cand in candidates:
-                        if cand.upper() in opt_text or opt_text in cand.upper():
-                            try:
-                                await sel.first.select_option(value=opt_val)
-                                return True
-                            except Exception:
-                                pass
         return False
 
     async def _submit(self, page):

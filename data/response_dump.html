@@ -1,0 +1,1553 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head id="Head1"><meta name="copyright" content="Copyright 2001-2017 Harris Recording Solutions.  All Rights Reserved." /><meta name="robots" content="NOFOLLOW,NOINDEX" /><link rel="stylesheet" href="../Style/style.css" type="text/css" /><link rel="stylesheet" href="../Style/styleforsearch.css" type="text/css" /><link id="favIcon" rel="Shortcut Icon" href="../favicon.ico" />
+		<title>
+			Search Real Estate Index: Selection Criteria - Fort Bend County Clerk Web Access
+		</title>
+<script type="text/javascript" language="javascript"><!--
+function Search_Click(oButton, oEvent){
+		try{return _Search_Click(oButton, oEvent);}
+		catch(e){}
+}
+
+function showPoupWindow(url, h, w, title) {
+    var o = document.getElementById('ifrPopup');
+    if (o == null) {
+        alert('Error: popup frame not found!');
+    }
+    else {
+        o.src = url; // "Controls/SearchNadr.aspx?docId=" + escape(docId) + "&idx=" + escape(idx) + "&type=" + escape(itemType);
+    }
+
+    var wdw = $find('cphNoMargin_dlgPopup');
+    wdw.set_height(h);
+    wdw.set_width(w);
+    wdw.set_windowState(0);
+    var hdr = wdw.get_header();
+    hdr.setCaptionText(title);
+
+    return false;
+}
+function closePopupDialog() {
+    var wdw = $find('cphNoMargin_dlgPopup');
+    wdw.set_windowState(3);
+}
+function dlgPopup_WindowStateChanged(sender, eventArgs) {
+    //alert(sender.get_windowState());
+    if (sender.get_windowState() == 3) {
+        var o = document.getElementById('ifrPopup');
+        if (o != null) { o.src = ''; }
+    }
+}
+
+var _CombineCtlList = "";
+var _SepCtrlList = "";
+var rdoC = null;
+var rdoS = null;
+
+--></script>
+<link rel="stylesheet" href="../localization/styleFromCounty.css" type="text/css" />
+    <script type="text/javascript" src='/ClientScript/Accessibility.js'></script>
+
+	<script type="text/javascript">
+	    var _helpWin = null;
+	    window.onunload = function () { try { _mstr_closePopupWindow(); } catch (e) { } };
+
+	    function _mstr_closePopupWindow() {
+	        if (_helpWin != null) {
+	            _helpWin.close();
+	        }
+	        try { _mstr_closeImageWindow(); } catch (e) { }
+	    }
+
+	    var _imgWindow = null;
+	    var optns =null;
+	    //window.onunload = function () {try{_mstr_closeImageWindow();}catch(e){}};
+	    function _openImgWindow(url) {
+	        //if (_imgWindow != null) {
+	        //    try {
+	        //        _imgWindow.location.href = url;
+	        //        try { _imgWindow.focus(); }
+	        //        catch (e) { }
+	        //    }
+	        //    catch (e) { _imgWindow = null; }
+	        //}
+	        if (optns == null) {
+	            var h = screen.height - 70;
+	            var w = screen.width;
+	            var l = w - 980;
+	            if (h > 730) h = 730;
+	            if (l < 10) l = 10;
+	            if (w > 950) w = 950;
+	            optns = "height=" + h.toString() + ",width=" + w.toString() + ",left=" + l.toString() + ",top=10,location=no,menubar=no,toolbar=no,resizable=yes";
+	            //alert(optns);
+	        }
+	        _imgWindow = window.open(url, "", optns, true);
+	        //
+	    }
+	    function _mstr_closeImageWindow() {
+	        if (_imgWindow != null) {
+	            _imgWindow.close();
+	            _imgWindow = null;
+	        }
+	    }
+	</script>
+
+
+	<script type="text/javascript" id="igClientScript1">
+	<!--
+	    function showSelectRange(sender, e) {
+	    	var x = sender.x; //e.clientX; //0;
+	    	var y = sender.y; //e.clientY; //0;
+	        //        try {
+	        //            y = SumOffsetTop(oToolbar.Element) + 9; //oToolbar.Elementment.offsetTop;
+	        //            x = SumOffsetLeft(oButton.Element) + 6; //.offsetLeft;
+	        //        }
+	        //        catch (e) { }
+	        var mnu = $IG.WebDataMenu.find('RangeContextMenu');
+	        if (mnu == null) { alert("no menu"); return; }
+	        if (x != null && x > 0)
+	        	mnu.showAt(x + 10, y + 10, e);
+	        else
+	            mnu.showAt(600, 200, e);
+	    }
+
+	    var dteRngFromClientID, dteRngToClientID, dteRngIcon;
+
+	    function showSelectRange(sender, e, rngFromId, rngToId) {
+	        dteRngFromClientID = rngFromId;
+	        dteRngToClientID = rngToId;
+	        dteRngIcon = sender;
+	        var x = sender.x; //e.clientX; //0;
+	        var y = sender.y; //e.clientY; //0;
+	        //        try {
+	        //            y = SumOffsetTop(oToolbar.Element) + 9; //oToolbar.Elementment.offsetTop;
+	        //            x = SumOffsetLeft(oButton.Element) + 6; //.offsetLeft;
+	        //        }
+	        //        catch (e) { }
+	        var mnu = $IG.WebDataMenu.find('RangeContextMenu');
+	        if (mnu == null) { alert("no menu"); return; }
+	        if (x != null && x > 0)
+	        	mnu.showAt(x + 10, y + 10, e);
+	        else
+	            mnu.showAt(600, 200, e);
+	    }
+
+
+
+	    function RangeContextMenu_ItemClick(sender, eventArgs) {
+	        ///<summary>
+	        ///
+	        ///</summary>
+	        ///<param name="sender" type="Infragistics.Web.UI.WebDataMenu"></param>
+	        ///<param name="eventArgs" type="Infragistics.Web.UI.DataMenuItemCancelEventArgs"></param>
+
+	        //Add code to handle your event here.
+	        var dte1, dte2;
+	        dte1 = $find(dteRngFromClientID);
+	        dte2 = $find(dteRngToClientID);
+	        if (dte1 == null || dte2 == null) return;
+
+	        if (sender == null) sender = $find('RangeContextMenu');
+
+	        if (dte1 != null && dte2 != null) {
+	            switch (sender._selectedItem.get_key()) {
+	                case "TODAY":
+	                    dte1.set_value(new Date(_today));
+	                    dte2.set_value(new Date(_today));
+	                    break;
+	                case "YESTERDAY":
+	                    dte1.set_value(new Date(_yesterday));
+	                    dte2.set_value(new Date(_yesterday));
+	                    break;
+	                case "THISWEEK":
+	                    dte1.set_value(new Date(_startwk1));
+	                    dte2.set_value(new Date(_today));
+	                    break;
+	                case "LASTWEEK":
+	                    dte1.set_value(new Date(_startwk2));
+	                    dte2.set_value(new Date(_endwk2));
+	                    break;
+	                case "THISMONTH":
+	                    dte1.set_value(new Date(_startmth1));
+	                    dte2.set_value(new Date(_today));
+	                    break;
+	                case "LASTMONTH":
+	                    dte1.set_value(new Date(_startmth2));
+	                    dte2.set_value(new Date(_endmth2));
+	                    break;
+	            }
+	        }
+	        if (dteRngIcon != null) dteRngIcon.focus();
+	    }// -->
+	</script>
+
+	<script type="text/javascript">
+	    function showOptionWindow(url, w) {
+	        var o = document.getElementById('ifrOptionWindow');
+	        if (o == null) {
+	            alert('Error: search frame not found!');
+	        }
+	        else {
+	            o.src = url; // "Controls/SearchNadr.aspx?docId=" + escape(docId) + "&idx=" + escape(idx) + "&type=" + escape(itemType);
+	        }
+
+	        var wdw = $find('dlgOptionWindow');
+	        wdw.set_width(w.toString() + 'px');
+	        wdw.set_windowState(0);
+	        //wdw.set_left('360px');
+	        //wdw.set_top('150px');
+
+	        return false;
+	    }
+	    function closeOptionDialog() {
+	        var wdw = $find('dlgOptionWindow');
+	        wdw.set_windowState(3);
+	        var o = document.getElementById('ifrOptionWindow');
+	        if (o != null) o.src = "";
+	    }
+	    function dlgOptionWindow_WindowStateChanged(sender, eventArgs) {
+	        //alert(sender.get_windowState());
+	        if (sender.get_windowState() == 3) {
+	            var o = document.getElementById('ifrOptionWindow');
+	            if (o != null) { o.src = ""; }
+	        }
+	    }
+	</script>
+
+	<script type="text/javascript">
+		function _mstr_getIFrContentDoc(ifrObj) {
+			var retVal = (ifrObj.contentDocument != null ? ifrObj.contentWindow : document.frames[ifrObj.id].window);
+			return retVal;
+		}
+
+		function _mstr_checkKey(event, mode) {
+			var key;
+			if (window.event) {
+				key = window.event.keyCode;
+			}
+			else {
+				key = event.which;
+			}
+			switch (mode) {
+				case 1: //page range
+					if (key < 48 || (key > 57)) {
+						if (key != 32 && key != 44 && key != 45) {
+							return false;
+						}
+					}
+					break;
+				case 2: //numeric
+					if (key < 48 || (key > 57)) {
+						return false;
+					}
+					break;
+			}
+			return true;
+		}
+
+		function _mstr_checkIfSearch(btnId, event) {
+			var key;
+			if (window.event) {
+				key = window.event.keyCode;
+			}
+			else {
+				key = event.which;
+			}
+			if (key == 13) {
+				var btn = ig_getWebControlById(btnId);
+				if (btn != null) {
+					//alert('no button ' + btnId); return;
+					//btn.set_postBack(1);
+					document.getElementById("__EVENTTARGET").value = escape(btnId).replace(/_/g, "$");
+					document.getElementById("__EVENTARGUMENT").value = "0";
+					document.forms[0].submit();
+					return false;
+				}
+			}
+			return true;
+		}
+
+		function dlgInit(sender, eventArgs) {
+			dialog_accessibility(sender, eventArgs);
+		}
+	</script>
+<title>
+	Search Real Estate Index: Selection Criteria
+</title></head>
+
+<body>
+
+    <div style="display:none;"><a name="maincontent" title="skip to the main content area of this page">skip to the main content area of this page</a></div>
+         <a id="HomePageLink" class="CountyHeaderLink" aria-label="Link to main home page." href="http://www.co.fort-bend.tx.us/">
+<div style="height:90px; border-bottom: 2px solid black; background-color:White; text-decoration: none; color: black; ">
+<Table border="0">
+	<tr>
+		<td vAlign="top" colSpan="1"><img id="County1_Image1" title="County Seal" src="../localization/seal_85px.gif" /></td>
+		<td style="padding-left:10px;"><div style="font-size:22pt;font-weight:bold;">Fort Bend County Texas</div>
+		<div style="font-size:16pt;font-weight:bold;">County Clerk Web Access</div></td>
+	</tr>
+</Table>
+</div>
+</a>   
+    <div id="_countyFrame">
+        <form method="post" action="./SearchEntry.aspx" onsubmit="javascript:return WebForm_OnSubmit();" id="form1" autocomplete="off">
+<div class="aspNetHidden">
+<input type="hidden" name="__EVENTTARGET" id="__EVENTTARGET" value="" />
+<input type="hidden" name="__EVENTARGUMENT" id="__EVENTARGUMENT" value="" />
+<input type="hidden" name="__VIEWSTATE" id="__VIEWSTATE" value="/wEPDwUKMTM4NjQzNzI4NQ9kFgJmD2QWBAIBDw8WAh4LTmF2aWdhdGVVcmwFHmh0dHA6Ly93d3cuY28uZm9ydC1iZW5kLnR4LnVzL2RkAgIPZBYKAgMPZBYGAgQPDxYCHgRUZXh0ZWRkAgcPFgMWBw8WAh4OX2RhdGFLZXlGaWVsZHNlZGRkZGQXABYAZGRkAgkPDxYCHwEFJ09mZmljaWFsIFB1YmxpYyBSZWNvcmRzIERvY3VtZW50IEFjY2Vzc2RkAgcPZBYKAgEPDxYCHwEFeFBlcm1hbmVudCBJbmRleCBGcm9tIDAxLzAxLzE4MzggdG8gMDQvMjAvMjAyNjxicj5UZW1wb3JhcnkgSW5kZXggZnJvbSAwNC8yMS8yMDI2IHRvIDA0LzIzLzIwMjY8YnI+SW1hZ2VzIGZyb20gMDEvMDEvMTgzOGRkAgkPZBYCAgEPDxYCHgdWaXNpYmxlaGQWAgICD2QWBAICD2QWAgIDDxBkZBYAZAIDD2QWFAIDDzwrAAUBAhQrAAIWAh4LY2xpZW50U3RhdGUUKwABZGRkAgkPPCsABQECFCsAAhYCHwQUKwABZGRkAg8PPCsABQECFCsAAhYCHwQUKwABZGRkAhcPPCsABQECFCsAAhYCHwQUKwABZGRkAh8PEGRkFgFmZAIjDzwrAAUBAhQrAAIWAh8EFCsAAWRkZAIlDzwrAAUBAhQrAAIWAh8EFCsAAWRkZAIpDzwrAAUBAhQrAAIWAh8EFCsAAWRkZAIrDxBkZBYBZmQCLw88KwAFAQIUKwACFgIfBBQrAAFkZGQCCw9kFgJmD2QWCmYPEA9kFgIeB29uY2xpY2sFEXRvZ2dsZU5hbWVNb2RlKCk7ZGRkAgQPEGRkFgECAmQCBw8QD2QWAh8FBRF0b2dnbGVOYW1lTW9kZSgpO2RkZAIaDxBkZBYAZAImDxBkZBYBZmQCDw9kFgRmDxYCHwNoFgICAQ9kFgJmD2QWAmYPPCsACwBkAgIPFgIfA2gWAgIBD2QWAmYPZBYCZg88KwALAQAPFggeCERhdGFLZXlzFgAeC18hSXRlbUNvdW50Zh4JUGFnZUNvdW50AgEeFV8hRGF0YVNvdXJjZUl0ZW1Db3VudGZkZAIRD2QWBGYPFCsAAmRkZAIBDxQrAAQUKwACZGRkZBYCHgF2Z2QCCw9kFgRmDxQrAAJkZGQCAQ8UKwAEFCsAAmRkZGQWAh8KZ2QCDQ8WAxYEZGQUKwACFgIeEGNvbGxlY3Rpb25zU3RhdGUFmw1beycwJzpbW251bGwsbnVsbCxudWxsLG51bGwsIlRvZGF5IixudWxsLCJUT0RBWSIsImphdmFzY3JpcHQ6UmFuZ2VDb250ZXh0TWVudV9JdGVtQ2xpY2soKTsiLCIiLG51bGwsbnVsbCxudWxsLG51bGwsbnVsbF1dLCcxJzpbW251bGwsbnVsbCxudWxsLG51bGwsIlllc3RlcmRheSIsbnVsbCwiWUVTVEVSREFZIiwiamF2YXNjcmlwdDpSYW5nZUNvbnRleHRNZW51X0l0ZW1DbGljaygpOyIsIiIsbnVsbCxudWxsLG51bGwsbnVsbCxudWxsXV0sJzInOltbbnVsbCxudWxsLG51bGwsbnVsbCwiVGhpcyBXZWVrIixudWxsLCJUSElTV0VFSyIsImphdmFzY3JpcHQ6UmFuZ2VDb250ZXh0TWVudV9JdGVtQ2xpY2soKTsiLCIiLG51bGwsbnVsbCxudWxsLG51bGwsbnVsbF1dLCczJzpbW251bGwsbnVsbCxudWxsLG51bGwsIkxhc3QgV2VlayIsbnVsbCwiTEFTVFdFRUsiLCJqYXZhc2NyaXB0OlJhbmdlQ29udGV4dE1lbnVfSXRlbUNsaWNrKCk7IiwiIixudWxsLG51bGwsbnVsbCxudWxsLG51bGxdXSwnNCc6W1tudWxsLG51bGwsbnVsbCxudWxsLCJUaGlzIE1vbnRoIixudWxsLCJUSElTTU9OVEgiLCJqYXZhc2NyaXB0OlJhbmdlQ29udGV4dE1lbnVfSXRlbUNsaWNrKCk7IiwiIixudWxsLG51bGwsbnVsbCxudWxsLG51bGxdXSwnNSc6W1tudWxsLG51bGwsbnVsbCxudWxsLCJMYXN0IE1vbnRoIixudWxsLCJMQVNUTU9OVEgiLCJqYXZhc2NyaXB0OlJhbmdlQ29udGV4dE1lbnVfSXRlbUNsaWNrKCk7IiwiIixudWxsLG51bGwsbnVsbCxudWxsLG51bGxdXX0seyctMSc6W1tudWxsLG51bGwsbnVsbCxudWxsLG51bGwsbnVsbCxudWxsLG51bGwsbnVsbCxudWxsLG51bGwsbnVsbCxudWxsLG51bGwsbnVsbCxudWxsLG51bGwsbnVsbCxudWxsLG51bGwsbnVsbCxudWxsLG51bGwsbnVsbCwiLTEiXV0sJzAnOltbbnVsbCxudWxsLG51bGwsbnVsbCxudWxsLG51bGwsbnVsbCxudWxsLG51bGwsbnVsbCxudWxsLG51bGwsbnVsbCxudWxsLG51bGwsbnVsbCxudWxsLG51bGwsbnVsbCxudWxsLG51bGwsbnVsbCxudWxsLG51bGwsIjAiXV0sJzEnOltbbnVsbCxudWxsLG51bGwsbnVsbCxudWxsLG51bGwsbnVsbCxudWxsLG51bGwsbnVsbCxudWxsLG51bGwsbnVsbCxudWxsLG51bGwsbnVsbCxudWxsLG51bGwsbnVsbCxudWxsLG51bGwsbnVsbCxudWxsLG51bGwsIjEiXV0sJzInOltbbnVsbCxudWxsLG51bGwsbnVsbCxudWxsLG51bGwsbnVsbCxudWxsLG51bGwsbnVsbCxudWxsLG51bGwsbnVsbCxudWxsLG51bGwsbnVsbCxudWxsLG51bGwsbnVsbCxudWxsLG51bGwsbnVsbCxudWxsLG51bGwsIjIiXV0sJzMnOltbbnVsbCxudWxsLG51bGwsbnVsbCxudWxsLG51bGwsbnVsbCxudWxsLG51bGwsbnVsbCxudWxsLG51bGwsbnVsbCxudWxsLG51bGwsbnVsbCxudWxsLG51bGwsbnVsbCxudWxsLG51bGwsbnVsbCxudWxsLG51bGwsIjMiXV0sJzQnOltbbnVsbCxudWxsLG51bGwsbnVsbCxudWxsLG51bGwsbnVsbCxudWxsLG51bGwsbnVsbCxudWxsLG51bGwsbnVsbCxudWxsLG51bGwsbnVsbCxudWxsLG51bGwsbnVsbCxudWxsLG51bGwsbnVsbCxudWxsLG51bGwsIjQiXV0sJzUnOltbbnVsbCxudWxsLG51bGwsbnVsbCxudWxsLG51bGwsbnVsbCxudWxsLG51bGwsbnVsbCxudWxsLG51bGwsbnVsbCxudWxsLG51bGwsbnVsbCxudWxsLG51bGwsbnVsbCxudWxsLG51bGwsbnVsbCxudWxsLG51bGwsIjUiXV19XWRkD2QWBg9mFCsAAhQrAAIWBB4CTjFlHgJOOWVkZA8CARQrAAIUKwACFgQfDGUfDWVkZA8CAhQrAAIUKwACFgQfDGUfDWVkZA8CAxQrAAIUKwACFgQfDGUfDWVkZA8CBBQrAAIUKwACFgQfDGUfDWVkZA8CBRQrAAIUKwACFgQfDGUfDWVkZGRkAg8PZBYIAgIPDxYCHgFFZWRkAgQPEA8WAh4HQ2hlY2tlZGhkZGRkAgoPZBYCAgIPZBYEAgIPZBYCAgMPEGRkFgBkAgMPZBYUAgMPPCsABQECFCsAAhYCHwQUKwABZGRkAgkPPCsABQECFCsAAhYCHwQUKwABZGRkAg8PPCsABQECFCsAAhYCHwQUKwABZGRkAhcPPCsABQECFCsAAhYCHwQUKwABZGRkAh8PEGRkFgFmZAIjDzwrAAUBAhQrAAIWAh8EFCsAAWRkZAIlDzwrAAUBAhQrAAIWAh8EFCsAAWRkZAIpDzwrAAUBAhQrAAIWAh8EFCsAAWRkZAIrDxBkZBYBZmQCLw88KwAFAQIUKwACFgIfBBQrAAFkZGQCCw9kFgICAg8WCRYCFgcPFgQeFWNvbHVtbnNJbnRlcm5hbEluaXRlZGgfAmVkZBQrAAIWBB8EPCsABAAfCwUtW3t9LHsnMCc6W1siZ3JpZEJhc2tldF9Ecm9wRG93blByb3ZpZGVyMSJdXX1dZGRkFwAWBRYCaBYEHgZERk5hbWUFDl9pbWdfTU9EVUxFX0lEHgZERlR5cGUFWlN5c3RlbS5TdHJpbmcsIG1zY29ybGliLCBWZXJzaW9uPTQuMC4wLjAsIEN1bHR1cmU9bmV1dHJhbCwgUHVibGljS2V5VG9rZW49Yjc3YTVjNTYxOTM0ZTA4ORYCaBYEHxEFEl9pbWdfRE9DVU1FTlRfVFlQRR8SBVpTeXN0ZW0uU3RyaW5nLCBtc2NvcmxpYiwgVmVyc2lvbj00LjAuMC4wLCBDdWx0dXJlPW5ldXRyYWwsIFB1YmxpY0tleVRva2VuPWI3N2E1YzU2MTkzNGUwODkWAmgWBB8RBRJfaW1nX1NFTlRfVE9fUVVFVUUfEgVaU3lzdGVtLlN0cmluZywgbXNjb3JsaWIsIFZlcnNpb249NC4wLjAuMCwgQ3VsdHVyZT1uZXV0cmFsLCBQdWJsaWNLZXlUb2tlbj1iNzdhNWM1NjE5MzRlMDg5FgJoFgQfEQUIRkVFVkFMVUUfEgVaU3lzdGVtLlN0cmluZywgbXNjb3JsaWIsIFZlcnNpb249NC4wLjAuMCwgQ3VsdHVyZT1uZXV0cmFsLCBQdWJsaWNLZXlUb2tlbj1iNzdhNWM1NjE5MzRlMDg5FgJoFgQfEQUFTm90ZXMfEgVaU3lzdGVtLlN0cmluZywgbXNjb3JsaWIsIFZlcnNpb249NC4wLjAuMCwgQ3VsdHVyZT1uZXV0cmFsLCBQdWJsaWNLZXlUb2tlbj1iNzdhNWM1NjE5MzRlMDg5ZA9kFhkPZhYCFgMWDh4CRjAFDUEyX1NFU1NJT05fSUQeBEJERjMFDFN5c3RlbS5JbnQzMh4EQkRGMAUNQTJfU0VTU0lPTl9JRB4DR0YxGwAAAAAAgFFAAQAAAB4OaGlkZGVuSW50ZXJuYWwLKYoBSW5mcmFnaXN0aWNzLldlYi5VSS5EZWZhdWx0YWJsZUJvb2xlYW4sIEluZnJhZ2lzdGljczQuV2ViLnYxMy4yLCBWZXJzaW9uPTEzLjIuMjAxMzIuMjI5NCwgQ3VsdHVyZT1uZXV0cmFsLCBQdWJsaWNLZXlUb2tlbj03ZGQ1YzMxNjNmMmNkMGNiAR4Pcm93U3BhbkludGVybmFsZh4WaGlkZGVuQnlQYXJlbnRJbnRlcm5hbGgWAhYCHgNGQzEFCVNlc3Npb24gIwUJU2Vzc2lvbiAjFgIWAh8aZWVkDwIBFgIWAxYQHxMFCEJBVENIX0lEHxQFDFN5c3RlbS5JbnQzMh8VBQhCQVRDSF9JRB4DR0YwBQxjZW50ZXJlZENlbGwfFhsAAAAAAIBRQAEAAAAfFwsrBAAfGGYfGWgWAhYCHxoFCVJlcXVlc3QgIwUJUmVxdWVzdCAjFgIWAh8aZWVkDwICFgIWAxYSHxQFD1N5c3RlbS5EYXRlVGltZR4ERkdGMAUXezA6TU0vZGQveXl5eSBoaDptbSB0dH0fGWgfEwULQUNUSU9OX1RJTUUfFwsrBAAfFhsAAAAAAEBgQAEAAAAfFQULQUNUSU9OX1RJTUUfGGYfGwUMY2VudGVyZWRDZWxsFgIWAh8aBQpEYXRlIEFkZGVkBQpEYXRlIEFkZGVkFgIWAh8aZWVkDwIDFgIWAxYMHxMFCU1PRFVMRV9JRB8VBQlNT0RVTEVfSUQfFhsAAAAAAABpQAEAAAAfFwsrBAEfGGYfGWgWAhYCHxoFCU1vZHVsZSBJZAUJTW9kdWxlIElkFgIWAh8aZWVkDwIEFgIWAxYMHxMFDURPQ1VNRU5UX1RZUEUfFQUNRE9DVU1FTlRfVFlQRR8WGwAAAAAAAGlAAQAAAB8XCysEAR8YZh8ZaBYCFgIfGgULQWN0aW9uIFR5cGUFC0FjdGlvbiBUeXBlFgIWAh8aZWVkDwIFFgIWAxYMHxMFDVNFTlRfVE9fUVVFVUUfFQUNU0VOVF9UT19RVUVVRR8WGwAAAAAAAFRAAQAAAB8XCysEAR8YZh8ZaBYCFgIfGgULRGVzdGluYXRpb24FC0Rlc3RpbmF0aW9uFgIWAh8aZWVkDwIGFgMWCh8TBQ5faW1nX01PRFVMRV9JRB8WGwAAAAAAAD5AAQAAAB8XCysEAR8YZh8ZaBYCFgIfGmVlFgIWAh8aZWUPAgcWAxYKHxMFEl9pbWdfRE9DVU1FTlRfVFlQRR8WGwAAAAAAAD5AAQAAAB8XCysEAR8YZh8ZaBYCFgIfGmVlFgIWAh8aZWUPAggWAxYKHxMFEl9pbWdfU0VOVF9UT19RVUVVRR8WGwAAAAAAAD5AAQAAAB8XCysEAR8YZh8ZaBYCFgIfGmVlFgIWAh8aZWUPAgkWAhYDFgwfEwURSU5TVFJVTUVOVF9OVU1CRVIfFQURSU5TVFJVTUVOVF9OVU1CRVIfFhsAAAAAAABZQAEAAAAfFwsrBAAfGGYfGWgWAhYCHxoFC1JlZmVyZW5jZSAjBQtSZWZlcmVuY2UgIxYCFgIfGmVlZA8CChYCFgMWDB8TBQ9ET0NfREVTQ1JJUFRJT04fFQUPRE9DX0RFU0NSSVBUSU9OHxYbAAAAAAAAaUABAAAAHxcLKwQAHxhmHxloFgIWAh8aBRBJdGVtIERlc2NyaXB0aW9uBRBJdGVtIERlc2NyaXB0aW9uFgIWAh8aZWVkDwILFgIWAxYQHxMFCE5PX1BBR0VTHxQFDFN5c3RlbS5JbnQzMh8VBQhOT19QQUdFUx8bBQxjZW50ZXJlZENlbGwfFhsAAAAAAABOQAEAAAAfFwsrBAAfGGYfGWgWAhYCHxoFByMgUGFnZXMFByMgUGFnZXMWAhYCHxplZWQPAgwWAhYDFhIfFAUOU3lzdGVtLkRlY2ltYWwfHAUFezA6Y30fGWgfEwUDRkVFHxcLKwQBHxYbAAAAAAAATkABAAAAHxUFA0ZFRR8YZh8bBQxjZW50ZXJlZENlbGwWAhYCHxoFA0ZlZQUDRmVlFgIWAh8aZWVkDwINFgMWDB8TBQhGRUVWQUxVRR8bBQ5jZW50ZXJlZENvbHVtbh8WGwAAAAAAAE5AAQAAAB8XCysEAB8YZh8ZaBYCFgIfGgUDRmVlBQNGZWUWAhYCHxplZQ8CDhYCFgMWDB8TBQtET0NVTUVOVF9JRB8VBQtET0NVTUVOVF9JRB8WGwAAAAAAAFtAAQAAAB8XCysEAR8YZh8ZaBYCFgIfGgUKRG9jdW1lbnQgIwUKRG9jdW1lbnQgIxYCFgIfGmVlZA8CDxYCFgMWDB8TBQhRVUFOVElUWR8VBQhRVUFOVElUWR8WGwAAAAAAQGBAAQAAAB8XCysEAR8YZh8ZaBYCFgIfGgUIUXVhbnRpdHkFCFF1YW50aXR5FgIWAh8aZWVkDwIQFgIWAxYMHxMFCUdMT0JBTF9JRB8VBQlHTE9CQUxfSUQfFhsAAAAAAABpQAEAAAAfFwsrBAEfGGYfGWgWAhYCHxoFCUdsb2JhbCBJZAUJR2xvYmFsIElkFgIWAh8aZWVkDwIRFgIWAxYOHxMFClJFUVVFU1RfSUQfFAUMU3lzdGVtLkludDMyHxUFClJFUVVFU1RfSUQfFhsAAAAAAABUQAEAAAAfFwsrBAEfGGYfGWgWAhYCHxoFCVJlcXVlc3QgIwUJUmVxdWVzdCAjFgIWAh8aZWVkDwISFgIWAxYMHxMFCVJFUVVFU1RPUh8VBQlSRVFVRVNUT1IfFhsAAAAAAABpQAEAAAAfFwsrBAEfGGYfGWgWAhYCHxoFCVJlcXVlc3RvcgUJUmVxdWVzdG9yFgIWAh8aZWVkDwITFgIWAxYKHxMFB1JFTUFSS1MfFQUHUkVNQVJLUx8XCysEAR8YZh8ZaBYCFgIfGgUHUmVtYXJrcwUHUmVtYXJrcxYCFgIfGmVlZA8CFBYCFgMWCh8TBQ5BQ1RJVkVfUkVRVUVTVB8VBQ5BQ1RJVkVfUkVRVUVTVB8XCysEAR8YZh8ZaBYCFgIfGgUOQWN0aXZlIFJlcXVlc3QFDkFjdGl2ZSBSZXF1ZXN0FgIWAh8aZWVkDwIVFgIWAxYKHxMFD19QcmV2ZW50UmVtb3ZhbB8VBQ9fUHJldmVudFJlbW92YWwfFwsrBAEfGGYfGWgWAhYCHxoFDnByZXZlbnRyZW1vdmFsBQ5wcmV2ZW50cmVtb3ZhbBYCFgIfGmVlZA8CFhYCFgMWCh8TBQ1fQWNjZXNzRGVuaWVkHxUFDV9BY2Nlc3NEZW5pZWQfFwsrBAEfGGYfGWgWAhYCHxoFDGFjY2Vzc2RlbmllZAUMYWNjZXNzZGVuaWVkFgIWAh8aZWVkDwIXFgMWCh8TBQZBY3Rpb24fFhsAAAAAAABZQAEAAAAfFwsrBAAfGGYfGWgWAhYCHxoFBkFjdGlvbgUGQWN0aW9uFgIWAh8aZWUPAhgWAxYIHxMFBU5vdGVzHxcLKwQAHxhmHxloFgIWAh8aBQVOb3RlcwUFTm90ZXMWAhYCHxplZQ9kFgQPZhYCFgIWAh8EFCsAAwUKQWN0aXZhdGlvbmRkZGQPAgEWAhYCZGQPZBYDD2YWAh4FQ1NfQ0sFDl9pbWdfTU9EVUxFX0lEDwIBFgIfHQUSX2ltZ19ET0NVTUVOVF9UWVBFDwICFgIfHQUSX2ltZ19TRU5UX1RPX1FVRVVFDwICFgIWAh8EPCsACAIABQlTZWxlY3Rpb24BCymUAUluZnJhZ2lzdGljcy5XZWIuVUkuR3JpZENvbnRyb2xzLkNlbGxDbGlja0FjdGlvbiwgSW5mcmFnaXN0aWNzNC5XZWIudjEzLjIsIFZlcnNpb249MTMuMi4yMDEzMi4yMjk0LCBDdWx0dXJlPW5ldXRyYWwsIFB1YmxpY0tleVRva2VuPTdkZDVjMzE2M2YyY2QwY2IBZA8CAxYCFgIWAh8EFCsAAQULRWRpdGluZ0NvcmVkD2QWAQ9mFgIWAhYCHwQUKwABBQtDZWxsRWRpdGluZ2QPZBYBD2YWBh8dBQ1ET0NVTUVOVF9UWVBFHgNDRTAFHGdyaWRCYXNrZXRfRHJvcERvd25Qcm92aWRlcjEfBBQrAAFkZA9kFgEPZhYCHwQUKwABBRxncmlkQmFza2V0X0Ryb3BEb3duUHJvdmlkZXIxZGRkZGQYBAUaY3RsMDAkSGVhZGVyMSRXZWJEYXRhTWVudTEPBQIxMmQFFmN0bDAwJFJhbmdlQ29udGV4dE1lbnUPZWQFFGN0bDAwJF9pZ19kZWZfZHBfY2FsDxQrAAIGAAAAAAAAAAAGAAgSLPWg3ohkBR5fX0NvbnRyb2xzUmVxdWlyZVBvc3RCYWNrS2V5X18WgAEFFGN0bDAwJEhlYWRlcjEkV2ViSERTBRpjdGwwMCRIZWFkZXIxJFdlYkRhdGFNZW51MQUqY3RsMDAkY3BoTm9NYXJnaW4kU2VhcmNoQnV0dG9uczEkYnRuU2VhcmNoBSljdGwwMCRjcGhOb01hcmdpbiRTZWFyY2hCdXR0b25zMSRidG5DbGVhcgUeY3RsMDAkY3BoTm9NYXJnaW4kZiRyZG9Db21iaW5lBRxjdGwwMCRjcGhOb01hcmdpbiRmJHR4dFBhcnR5BRpjdGwwMCRjcGhOb01hcmdpbiRmJHJkb1NlcAUaY3RsMDAkY3BoTm9NYXJnaW4kZiRyZG9TZXAFHmN0bDAwJGNwaE5vTWFyZ2luJGYkdHh0R3JhbnRvcgUeY3RsMDAkY3BoTm9NYXJnaW4kZiR0eHRHcmFudGVlBSRjdGwwMCRjcGhOb01hcmdpbiRmJGRkY0RhdGVGaWxlZEZyb20FImN0bDAwJGNwaE5vTWFyZ2luJGYkZGRjRGF0ZUZpbGVkVG8FJ2N0bDAwJGNwaE5vTWFyZ2luJGYkdHh0SW5zdHJ1bWVudE5vRnJvbQUlY3RsMDAkY3BoTm9NYXJnaW4kZiR0eHRJbnN0cnVtZW50Tm9UbwUbY3RsMDAkY3BoTm9NYXJnaW4kZiR0eHRCb29rBRtjdGwwMCRjcGhOb01hcmdpbiRmJHR4dFBhZ2UFIGN0bDAwJGNwaE5vTWFyZ2luJGYkZGNsRG9jVHlwZSQwBSBjdGwwMCRjcGhOb01hcmdpbiRmJGRjbERvY1R5cGUkMQUgY3RsMDAkY3BoTm9NYXJnaW4kZiRkY2xEb2NUeXBlJDIFIGN0bDAwJGNwaE5vTWFyZ2luJGYkZGNsRG9jVHlwZSQzBSBjdGwwMCRjcGhOb01hcmdpbiRmJGRjbERvY1R5cGUkNAUgY3RsMDAkY3BoTm9NYXJnaW4kZiRkY2xEb2NUeXBlJDUFIGN0bDAwJGNwaE5vTWFyZ2luJGYkZGNsRG9jVHlwZSQ2BSBjdGwwMCRjcGhOb01hcmdpbiRmJGRjbERvY1R5cGUkNwUgY3RsMDAkY3BoTm9NYXJnaW4kZiRkY2xEb2NUeXBlJDgFIGN0bDAwJGNwaE5vTWFyZ2luJGYkZGNsRG9jVHlwZSQ5BSFjdGwwMCRjcGhOb01hcmdpbiRmJGRjbERvY1R5cGUkMTAFIWN0bDAwJGNwaE5vTWFyZ2luJGYkZGNsRG9jVHlwZSQxMQUhY3RsMDAkY3BoTm9NYXJnaW4kZiRkY2xEb2NUeXBlJDEyBSFjdGwwMCRjcGhOb01hcmdpbiRmJGRjbERvY1R5cGUkMTMFIWN0bDAwJGNwaE5vTWFyZ2luJGYkZGNsRG9jVHlwZSQxNAUhY3RsMDAkY3BoTm9NYXJnaW4kZiRkY2xEb2NUeXBlJDE1BSFjdGwwMCRjcGhOb01hcmdpbiRmJGRjbERvY1R5cGUkMTYFIWN0bDAwJGNwaE5vTWFyZ2luJGYkZGNsRG9jVHlwZSQxNwUhY3RsMDAkY3BoTm9NYXJnaW4kZiRkY2xEb2NUeXBlJDE4BSFjdGwwMCRjcGhOb01hcmdpbiRmJGRjbERvY1R5cGUkMTkFIWN0bDAwJGNwaE5vTWFyZ2luJGYkZGNsRG9jVHlwZSQyMAUhY3RsMDAkY3BoTm9NYXJnaW4kZiRkY2xEb2NUeXBlJDIxBSFjdGwwMCRjcGhOb01hcmdpbiRmJGRjbERvY1R5cGUkMjIFIWN0bDAwJGNwaE5vTWFyZ2luJGYkZGNsRG9jVHlwZSQyMwUhY3RsMDAkY3BoTm9NYXJnaW4kZiRkY2xEb2NUeXBlJDI0BSFjdGwwMCRjcGhOb01hcmdpbiRmJGRjbERvY1R5cGUkMjUFIWN0bDAwJGNwaE5vTWFyZ2luJGYkZGNsRG9jVHlwZSQyNgUhY3RsMDAkY3BoTm9NYXJnaW4kZiRkY2xEb2NUeXBlJDI3BSFjdGwwMCRjcGhOb01hcmdpbiRmJGRjbERvY1R5cGUkMjgFIWN0bDAwJGNwaE5vTWFyZ2luJGYkZGNsRG9jVHlwZSQyOQUhY3RsMDAkY3BoTm9NYXJnaW4kZiRkY2xEb2NUeXBlJDMwBSFjdGwwMCRjcGhOb01hcmdpbiRmJGRjbERvY1R5cGUkMzEFIWN0bDAwJGNwaE5vTWFyZ2luJGYkZGNsRG9jVHlwZSQzMgUhY3RsMDAkY3BoTm9NYXJnaW4kZiRkY2xEb2NUeXBlJDMzBSFjdGwwMCRjcGhOb01hcmdpbiRmJGRjbERvY1R5cGUkMzQFIWN0bDAwJGNwaE5vTWFyZ2luJGYkZGNsRG9jVHlwZSQzNQUhY3RsMDAkY3BoTm9NYXJnaW4kZiRkY2xEb2NUeXBlJDM2BSFjdGwwMCRjcGhOb01hcmdpbiRmJGRjbERvY1R5cGUkMzcFIWN0bDAwJGNwaE5vTWFyZ2luJGYkZGNsRG9jVHlwZSQzOAUhY3RsMDAkY3BoTm9NYXJnaW4kZiRkY2xEb2NUeXBlJDM5BSFjdGwwMCRjcGhOb01hcmdpbiRmJGRjbERvY1R5cGUkNDAFIWN0bDAwJGNwaE5vTWFyZ2luJGYkZGNsRG9jVHlwZSQ0MQUhY3RsMDAkY3BoTm9NYXJnaW4kZiRkY2xEb2NUeXBlJDQyBSFjdGwwMCRjcGhOb01hcmdpbiRmJGRjbERvY1R5cGUkNDMFIWN0bDAwJGNwaE5vTWFyZ2luJGYkZGNsRG9jVHlwZSQ0NAUhY3RsMDAkY3BoTm9NYXJnaW4kZiRkY2xEb2NUeXBlJDQ1BSFjdGwwMCRjcGhOb01hcmdpbiRmJGRjbERvY1R5cGUkNDYFIWN0bDAwJGNwaE5vTWFyZ2luJGYkZGNsRG9jVHlwZSQ0NwUhY3RsMDAkY3BoTm9NYXJnaW4kZiRkY2xEb2NUeXBlJDQ4BSFjdGwwMCRjcGhOb01hcmdpbiRmJGRjbERvY1R5cGUkNDkFIWN0bDAwJGNwaE5vTWFyZ2luJGYkZGNsRG9jVHlwZSQ1MAUhY3RsMDAkY3BoTm9NYXJnaW4kZiRkY2xEb2NUeXBlJDUxBSFjdGwwMCRjcGhOb01hcmdpbiRmJGRjbERvY1R5cGUkNTIFIWN0bDAwJGNwaE5vTWFyZ2luJGYkZGNsRG9jVHlwZSQ1MwUhY3RsMDAkY3BoTm9NYXJnaW4kZiRkY2xEb2NUeXBlJDU0BSFjdGwwMCRjcGhOb01hcmdpbiRmJGRjbERvY1R5cGUkNTUFIWN0bDAwJGNwaE5vTWFyZ2luJGYkZGNsRG9jVHlwZSQ1NgUhY3RsMDAkY3BoTm9NYXJnaW4kZiRkY2xEb2NUeXBlJDU3BSFjdGwwMCRjcGhOb01hcmdpbiRmJGRjbERvY1R5cGUkNTgFIWN0bDAwJGNwaE5vTWFyZ2luJGYkZGNsRG9jVHlwZSQ1OQUhY3RsMDAkY3BoTm9NYXJnaW4kZiRkY2xEb2NUeXBlJDYwBSFjdGwwMCRjcGhOb01hcmdpbiRmJGRjbERvY1R5cGUkNjEFIWN0bDAwJGNwaE5vTWFyZ2luJGYkZGNsRG9jVHlwZSQ2MgUhY3RsMDAkY3BoTm9NYXJnaW4kZiRkY2xEb2NUeXBlJDYzBSFjdGwwMCRjcGhOb01hcmdpbiRmJGRjbERvY1R5cGUkNjQFIWN0bDAwJGNwaE5vTWFyZ2luJGYkZGNsRG9jVHlwZSQ2NQUhY3RsMDAkY3BoTm9NYXJnaW4kZiRkY2xEb2NUeXBlJDY2BSFjdGwwMCRjcGhOb01hcmdpbiRmJGRjbERvY1R5cGUkNjcFIWN0bDAwJGNwaE5vTWFyZ2luJGYkZGNsRG9jVHlwZSQ2OAUhY3RsMDAkY3BoTm9NYXJnaW4kZiRkY2xEb2NUeXBlJDY5BSFjdGwwMCRjcGhOb01hcmdpbiRmJGRjbERvY1R5cGUkNzAFIWN0bDAwJGNwaE5vTWFyZ2luJGYkZGNsRG9jVHlwZSQ3MQUhY3RsMDAkY3BoTm9NYXJnaW4kZiRkY2xEb2NUeXBlJDcyBSFjdGwwMCRjcGhOb01hcmdpbiRmJGRjbERvY1R5cGUkNzMFIWN0bDAwJGNwaE5vTWFyZ2luJGYkZGNsRG9jVHlwZSQ3NAUhY3RsMDAkY3BoTm9NYXJnaW4kZiRkY2xEb2NUeXBlJDc1BSFjdGwwMCRjcGhOb01hcmdpbiRmJGRjbERvY1R5cGUkNzYFIWN0bDAwJGNwaE5vTWFyZ2luJGYkZGNsRG9jVHlwZSQ3NwUhY3RsMDAkY3BoTm9NYXJnaW4kZiRkY2xEb2NUeXBlJDc4BSFjdGwwMCRjcGhOb01hcmdpbiRmJGRjbERvY1R5cGUkNzkFIWN0bDAwJGNwaE5vTWFyZ2luJGYkZGNsRG9jVHlwZSQ4MAUhY3RsMDAkY3BoTm9NYXJnaW4kZiRkY2xEb2NUeXBlJDgxBSFjdGwwMCRjcGhOb01hcmdpbiRmJGRjbERvY1R5cGUkODIFIWN0bDAwJGNwaE5vTWFyZ2luJGYkZGNsRG9jVHlwZSQ4MwUhY3RsMDAkY3BoTm9NYXJnaW4kZiRkY2xEb2NUeXBlJDg0BSFjdGwwMCRjcGhOb01hcmdpbiRmJGRjbERvY1R5cGUkODUFIWN0bDAwJGNwaE5vTWFyZ2luJGYkZGNsRG9jVHlwZSQ4NQUhY3RsMDAkY3BoTm9NYXJnaW4kZiREYXRhVGV4dEVkaXQxBRxjdGwwMCRjcGhOb01hcmdpbiRmJHR4dExETG90BR1jdGwwMCRjcGhOb01hcmdpbiRmJHR4dExEQm9vawUgY3RsMDAkY3BoTm9NYXJnaW4kZiR0eHRMRFNlY3Rpb24FJmN0bDAwJGNwaE5vTWFyZ2luJGYkdHh0TERTdHJlZXRBZGRyZXNzBSFjdGwwMCRjcGhOb01hcmdpbiRmJHR4dExERnJlZUZvcm0FH2N0bDAwJGNwaE5vTWFyZ2luJGYkdHh0TERWb2x1bWUFHWN0bDAwJGNwaE5vTWFyZ2luJGYkdHh0TERQYWdlBSBjdGwwMCRjcGhOb01hcmdpbiRmJHR4dExETWFwY2FzZQUeY3RsMDAkY3BoTm9NYXJnaW4kZiR0eHRMRFNsaWRlBSpjdGwwMCRjcGhOb01hcmdpbiRTZWFyY2hCdXR0b25zMiRidG5TZWFyY2gFKWN0bDAwJGNwaE5vTWFyZ2luJFNlYXJjaEJ1dHRvbnMyJGJ0bkNsZWFyBRpjdGwwMCRjcGhOb01hcmdpbiRkbGdQb3B1cAUVY3RsMDAkZGxnT3B0aW9uV2luZG93BRZjdGwwMCRSYW5nZUNvbnRleHRNZW51BR1jdGwwMCRMb2dpbkZvcm0xJHR4dExvZ29uTmFtZQUcY3RsMDAkTG9naW5Gb3JtMSR0eHRQYXNzd29yZAUaY3RsMDAkTG9naW5Gb3JtMSRyZG9QdWJDcHUFGmN0bDAwJExvZ2luRm9ybTEkcmRvUHViQ3B1BRpjdGwwMCRMb2dpbkZvcm0xJHJkb1B2dENwdQUaY3RsMDAkTG9naW5Gb3JtMSRyZG9QdnRDcHUFGWN0bDAwJExvZ2luRm9ybTEkYnRuTG9nb24FEmN0bDAwJF9pZ19kZWZfZXBfbgUSY3RsMDAkX2lnX2RlZl9lcF9kBRRjdGwwMCRfaWdfZGVmX2RwX2NhbNDyMwj/cRB1sTj7R6JcztSazLPYMLG7Gx02eGls3Qv6" />
+</div>
+
+<script type="text/javascript">
+//<![CDATA[
+var theForm = document.forms['form1'];
+if (!theForm) {
+    theForm = document.form1;
+}
+function __doPostBack(eventTarget, eventArgument) {
+    if (!theForm.onsubmit || (theForm.onsubmit() != false)) {
+        theForm.__EVENTTARGET.value = eventTarget;
+        theForm.__EVENTARGUMENT.value = eventArgument;
+        theForm.submit();
+    }
+}
+//]]>
+</script>
+
+
+<script src="/WebResource.axd?d=DqIm1sWwESvbCOBup2FBCEv8WglGOi1zFEREXgNnT48vAaHTcb8nI6nWXBWlCLHyfw-aufDh-up-92Ioc4ZAWmZdcFrX3wmqpQYdijl1rxE1&amp;t=638901593280000000" type="text/javascript"></script>
+
+<SCRIPT type='text/javascript' src='/ClientScript/Entry.js'></script><script>var _today = '4/23/2026'; var _yesterday = '4/22/2026'; 
+	    var _startwk1 = '4/19/2026'; var _startwk2 = '4/12/2026'; var _endwk2 = '4/18/2026';
+	    var _startmth1 = '4/1/2026'; var _startmth2 = '3/1/2026'; var _endmth2 = '3/31/2026';</script>
+<link href="../ig_res/Default/ig_shared.css" type="text/css" rel="stylesheet" />
+<link href="../ig_res/ElectricBlue/ig_shared.css" type="text/css" rel="stylesheet" />
+<link href="../ig_res/ElectricBlue/ig_datamenu.css" type="text/css" rel="stylesheet" />
+<link href="../ig_res/ElectricBlue/ig_dialogwindow.css" type="text/css" rel="stylesheet" />
+<link href="../ig_res/Default/ig_datamenu.css" type="text/css" rel="stylesheet" />
+<link href="../ig_res/Default/ig_texteditor.css" type="text/css" rel="stylesheet" />
+<link href="../ig_res/ElectricBlue/ig_texteditor.css" type="text/css" rel="stylesheet" />
+<link href="../ig_res/Default/ig_monthcalendar.css" type="text/css" rel="stylesheet" /><script type="text/javascript">
+//<![CDATA[
+var ig_pi_imageUrl='/WebResource.axd?d=35lawn6VWEgs_CpW9DbUt7dtbFEkA5melv6xmQoV2fyS0wvGx2LcooysEjK2Yahv90uqW6E9bao-jBb13wlOnGEzkZ7MFLhe0vjYlr1Wwz-zfW3pNUULdDMy9iFz9Pi_sZLqNrwz2x2uw__jA-UoA9IkMAh7REr6eDXXV2CgxlaVRE5EjTk3RyT9pFe4gZ_4l_l5HXDqstu5n74QCbAKiw2&t=639111657280000000';try{(new Image()).src=ig_pi_imageUrl;}catch(ex){}
+//]]>
+</script>
+<script src="/ScriptResource.axd?d=2d85Iy81Cok-pETS7isxOWSxP6PnMGoH99M_ASBakob5ZnLLjn55XYVRq7pKToNxlOmrebIkLBdvKkdkdISA1lggeKU52O6SBeZZJegtsqJFy5j4cSAKvRw_rah_JMHQ_K7k_kIElLlvFrgbU1j4ViHIC_ea3qoFfG3j2kcjk78R3MnjbGpTT6VIO4B5WZo60&amp;t=2b1c13a8" type="text/javascript"></script>
+<script src="/ScriptResource.axd?d=SlAipnJiVFA77TcAUcBv0H8BK7ldBxTnoBxOakaY6CTXejn9TblzWYws0xswTf-tnhelpwEoJUJlT4Ef9eZSQFzuC_aMoYOyUZefswkYmh4n_dDl0rpXCwVViTbEzlrXYsxz2tnthzhOTH4wPL8-hBupN1BoNwdgc3ZbQH0DCecoF3A0ZIhTCW0biaOHK96F0&amp;t=2b1c13a8" type="text/javascript"></script>
+<script src="/ScriptResource.axd?d=3QnGmEXE089KSIedRLJXRkrZSrFPI7NBUP0vNdmHCIdTtIKopwYRS068NlbkLVzy91f1tx9XBi-iweIu-QlKkFyFMwYVNgKLj_WB4wOUODWmzP6lZZ4FhIHI3uMJ3ql2q6kPYtoNxPl6KHBpBEHZlEFRHGjgly5FP-PMJ-XKL841&amp;t=fffffffff2f92c66" type="text/javascript"></script>
+<script src="/ScriptResource.axd?d=G6mQsRJwDuZifZjjx-1xdMtJuq9mX7HZO2A52YGlnLZODpY99i3ZVgdopJKDKU-TU62M8Tc6EOl1rRh6UwVQxU-n7ixcz14Fs0zdr0NcF3kLuJneiBXhSmB5I1UQQZyDLXHYBOX3mA_Q9G3V2LgJ2Y7cppGvDpodkElNntrJbYQ1&amp;t=32e5dfca" type="text/javascript"></script>
+<script src="/ScriptResource.axd?d=g20Vm5Ef5im_aYwKugSKu5gC5GTK5jNw7Xz3UqPSIMaIDdTzcaDlemcQcZHyd7arYBxvHVnDp-_CmerGQIapT2Wea_9fBsgVkNzk1OBUG3uyN_-A-yigAhRi28dUprdSwGZXTCkWsC4nlovTHs0U16N1qofkSbLra4hMOAAz856ipR6RUd78oEzqLpAq2Pc80&amp;t=32e5dfca" type="text/javascript"></script>
+<script src="/ScriptResource.axd?d=EpUg97jJzGm2Om57gc0ORIgPL2S7vC_4VXVzkktIvlUPWqT3SDOmCV8tZYUtR2YTMHDeJxzewsEUgBjVQiJKWnUq3jp_mT7GJio2XrqAHj_qrTuRVcJHgkvljuAGkl2tw_VUgCS8TAhFul6TTXxye4RmxgN5zTn9TiLDxXy3bXk1&amp;t=ffffffffcb0b3192" type="text/javascript"></script>
+<script src="/ScriptResource.axd?d=hUaa-SKSAReNV5RAuIgUWRaVtO8wrAVZv4n5wFSd5saZdH0XBYKpCyp-2Mgp7oUQ3tHotP5nel8kARDNX7gGax9DQynokqlwwkySMU6SJL4r5WeQ78qXmTUm6su_j51DYbJvO-sNz_2hEGKsfeD1kGRHDRnw1jVexrpmZPn0xhyOnKWvunWIDJegYBAFA8T90&amp;t=ffffffffcb0b3192" type="text/javascript"></script>
+<script src="/ScriptResource.axd?d=QrGtrHf_7-JwgiyTKXacXT8ulgRXaCc6CJtmJlgnuZYkdkicyvn0_nalspKFs-a5OxjfnBIjOdZuae78x-B4J-XXbsmi1JmBeL2EYuDAEtFoLzN63tZjLgfrEFicNCb2bUcuLEBdmlruC64EYmtA_wUMTNHQtAurMnQebb_fiWeM8dtTgGZgGU3WWpmPTHxMKR8KJEQ52jqL-PUlyyk67A2&amp;t=ffffffffcb0b3192" type="text/javascript"></script>
+<script src="/ScriptResource.axd?d=KKPaSAWXgIoMgm6OQhnC2zvoA9ZkLd5oI27b8Riw4ims0x443IfGTPw7EhMukr4mNLEqBfWzGxCn3PiKKow-A4VWbS28gjmjquv1ZKAI-wBNT0FcEfAu4M7uCc9LyTQn19zxvQONoqSLKVe9ARYM0u2vUMp3sR5QtIFrOQl8X47nCc18LZyWFks7uOQlqMZjYYKT33T9XpMiOh5M0dqa5Q2&amp;t=ffffffffcb0b3192" type="text/javascript"></script>
+<script src="/ScriptResource.axd?d=Z6tS4QI_B1UObMN8PJ91IAZssg_cTq1E7eK9k-dKj3JqapqHZJDlf9gccdrLmiBQybNiaE9BesQIZkR91RthdoSrI1QBsjkws6eZ6WmytT4d_a8WQe8rsHytKGTyvkgEYAKMWXQoUNrIHbj__MpeKjyeEihuxUiFGVr9tM7jgNaLLiS6se160TRDQNd_w0zwevC6gBvgKuU-LUA3lbNpZA2&amp;t=ffffffffcb0b3192" type="text/javascript"></script>
+<script src="/ScriptResource.axd?d=vg30cwVOMxxqPXY2l2OiimlUnYu4N9gb3jG1CAeCIwRaMUgqiITRj0VaeYv4N3ciDykkPrFroLzIXyFpPqyd1AzdxZZmG8VyC528OQVGpsHfsukceECKjSFXgECQx8g7x8y1MRHFgkMWqV_gn4Fv5cZsoHlozEfQ6y7HVj2aZkHBIPkB8jl2_bUzUbWwvC9M0&amp;t=ffffffffcb0b3192" type="text/javascript"></script>
+<script src="/ScriptResource.axd?d=eYQOhGryM27fjbMl60vM-Wp4LCox7-gBZRSzPefxGVUbDs6H2ttLzpqIarxkQkk3P6Ijrf617lX85VT5EKh6yv67_-DmkcwlLnipS4ZW3SlsfApNrY5pGXCjAndUfNH7ypfCmGoKHKTsA3qAow26Jkc74K77vTbMj1v-LHqwVFileJomjsCH_D_JcjDtYNsV0&amp;t=ffffffffcb0b3192" type="text/javascript"></script>
+<script src="/ScriptResource.axd?d=m8e5t0B4Sk-J3aNts4bTK38g6fRwU9hcb-OpGWwH-YPspAAL7oJvcOlTWYI7xkAZNfvlzia-2caNpu5Yyi3_ynikhzuO85dkBD6y1zsar4rXpWvWRogcgEXiR9yLKRL9-BIxCXl33VzS7hrHZGha4wR_TVGPl7iasn_Q3VWDLM_vyxGR98LXMoc9zySSBWorKahn5JtiTV_PjJSiZkSyYg2&amp;t=ffffffffcb0b3192" type="text/javascript"></script>
+<script src="/ScriptResource.axd?d=RoOOgCkkglyFG83uuAGdC1QUBkInZYQZN17LmLacFxHlEyYFDrHcS3Utw7-CfaFSyT5w6q1Yjsn9dQ_nUiXcB8UlIjeSPaRmb7LUvZQvevP7p6cgqOZhdI0oSFmzFtCLaKyy2xzh919b8Vpowemd8ZdBZVjCTe2Ei4M_KHZVcX4zA9qIC-hMyNHPzHsgkOKg0sBy1eORkxZfsJp-dBj5tQ2&amp;t=ffffffffcb0b3192" type="text/javascript"></script>
+<script type="text/javascript">
+//<![CDATA[
+if (document.head || (document.getElementsByTagName && document.getElementsByTagName('head') && document.getElementsByTagName('head').length > 0)) { 
+var docHead = (document.head ? document.head : document.getElementsByTagName('head')[0]); 
+var style = document.createElement('style'); 
+style.id ="igStyles";
+style.type = 'text/css';
+var __ig_css = "";
+if (style.styleSheet) { style.styleSheet.cssText =__ig_css;}
+else { style.appendChild(document.createTextNode(__ig_css));}
+docHead.appendChild(style);
+} 
+function WebForm_OnSubmit() {
+if (typeof(ValidatorOnSubmit) == "function" && ValidatorOnSubmit() == false) return false;
+return true;
+}
+//]]>
+</script>
+
+<div class="aspNetHidden">
+
+	<input type="hidden" name="__VIEWSTATEGENERATOR" id="__VIEWSTATEGENERATOR" value="88A9CE5A" />
+	<input type="hidden" name="__EVENTVALIDATION" id="__EVENTVALIDATION" value="/wEdAHr1XFt/DJ1AwtoGGjvLMmQL2+GS0gNNGH/2Mkt0ChRzcuwQTNl75jhWQKBmXmbhnBDIWQX1eF3DX4dOMDP9jtv+RgcnYi98141UVMcQh4OpPS5ZkgYbqqJRqui42PnXCKGxH4mCLhWZtrF636O0BQD0JREpr/zNHmAw/rgMWSq344KPHb4UMVOSRaL1cyvIDLUfssrxM7uINew/I5JvoB4t9drfiC3rQjggBZPEXPLoe3Tn7Yuci/qN3h8wFRkIQLG6HlWhjcODZ7S0w9AD4PocOOGcIAIrCAkdbTKYrtOTy6qbBQSZDTSlgtsEmVAtdq4jvHNYFkLSb0frEISPh8RGaoxtlz4QlNx6SCa3iKAMSstQdotRkpNR8Nv6H21CbzYF7hdRuVZilZAhwvNtOruj6/SbmUfItISj+obzEPOf3nCmjfB58tmuKyGDEwu/hUrdMWyZwOzOWtehfwOMuCbxcJTpg1+oGM0rhSu9d0xksUOOjmrUs5XGv5tz7nmlmUyQMt81rlDIEtkjJrnKXiAL8y+WQGJqq2Gw75CI4x+lYsjhb+g0fpVz9idk1egadHXf2hYvCWQ47rtHcLkbb3EDF8wRnA7aRtpdhj5n/wwCliWyhNRU+gwR3Wf5N9/P5IpaFHe0ZZX+unn9kJKdLs5xElLDTUucQT6Y6J+6R0k6pJXe60p2+yzHG/a4IlpwU7ONk/QcgfG+oEyI0BfDRj1CHbhjW/tbu3iQNo5VSHP8e6bfMpqnai6Q/VNPTtNfP5bWdpr5NhOlJK/9WtndMkDop/WrNP8w5zfimv2fbOURdeVeSCsKjoQOevD4SQvmrBXKSKh60K9hYAtRQ3LoU0cnfbcJu2zgYcKXBxYhOb72UGjjAR9ZEU3bkBO6BnpFuVd3vNQ8XLEZmb3baAgey2VZCNJNE8xqbOLGqSq1OHfFydoFFLXcRtaAgOL50QQP2THAVa7yu5U/0oHYg6mq95MWAFvoEMAAiBBdc+bsaWi03Q5bWR8Mwfi2PSqjKiqQ2Zba/ibeRxLiJwQdv1OjUBBCb2kEcpPTR43iLPrunzoL06+YLcfo+7J9vVA+SEeJlWnLF7BQHWn0kIuBURmq8Fik/upVdqS7cegt9L2VB/8yDDAjqHUuWlsHqQUYhNIkz7SDubTxQ+7kfyXiX1ns+QJKmOxqg8p8ramJu45sUwmS/WylBceXskf8YXttVhK837aEjbG0MB8cl1zjCCDqP3nft9cbJthtgkJLmQZSSBiOyFxBxPxqzZLR7SC8egWgEpvxTRL1QtLAiAdKBKePw1zcoNOM84sDpgY2x9572IG94dXdE5rgPZGfFAnSxHeEoVrYBLgKVYrsOqG/7LdnVsKTBQCWj10r2BDIezaD/dhm0uuAgn5ztO1o25qThZ3feve+cVBVxdVvKEXn5Cm3zQmvkHLywcoIXhlQE9aE8RFQZNMv6zHal0NmA6OVYKEszhYqMftbcPxYf+GMTRSkHrsBTvNGDL+sWxDMLCVpl6ZZcWguQcEVg33WH8k/aJlcWcGBAbwWpu5iq0dHZuAvHIhzVQAN4GofOWUUkE9ESJ27wgIfDDDtvLySTGaU1UOxU2p7jDkmcz3YOKYXfCMfv5a7UAE3rX0qhOIVSXdu57jzkJ39s6GYBn7AiUnr7sZVuqvXaP211Mmb7W89adf6zrr6Kw5Hl1Z/FiWltSbcf319SERlibzeYXsQP0iKCMbD83A5wSTH9Cc1hkx65RmcJ42y0VGuaRz8mpDa3zml85jW/qMOQ70h2fgdLDFBDVyx+j+504Lqh3mBpBNsuMtoJnij/EgbokECIikZTuL8U9i8BKhqtpD47XijkRf8wdTsI45UQlKBv/ywl6306wP6A2pvtsBYiU6FaDSa4TrV4lVTWHVMtkqmS3Bm4RWW970PgmjwApnBW4Z6J6ajsIh70Yw8rcrhSXfWLJDzF46dKsU/jDcpsx9wxXM7U1K7vrIhSJu2IAWK0N57FXoCJmFEgAUUvjK1tZ/pt5Y6BseWqzvYZRSqK9I+mIVJcgNpCBOdz9AyAkANu30IPkF5gdf4ZhOjL7NWmTxGcCLTOdb+AXRHBGjNWTa8rmhPPwx707kZoHaJuV1YEsdzMflrjRTomkB2gbR2yv+pL2ZbzuUhbSyZ2hQWa7OfheokIrHo/R37uT/qw9Kd+cgByfHmlH0415o8nuQqlICohmvxFVOHMBc6WP4wPs5sxGtHj+6iQl3/xGGjWeBczy+uPFy+7h6hIS3y2gW8gC/lDTujoS4zu+52cOQ0BxGy13t4Z1NPxwwDfrIoOLm82qAPgywr/iMrPMB8xHnHVKjj4IL9p4Skrn25Nn8TW/UlN9zZocyGXFHhzYkoBKRWzv92m20wsRDVL19W5q1QqmiX5DaJnU8J68DCDJCYE9/Yr0tekeA23QStcKd8BicSV+zm3dSPCsvIX5/jzs3RUn/jDk7oQyrpSM5ZPfhuaL5nrfDMDZA+3/0G7coRiJmqSlUZpRm+V6I5a0Cu4xZwHyASoGG2pKSVctS5qelpzquvG/YFWErcLu0B1w/RX4voneI4VOxMlObPwzUUiOZklp0ZzYteOWw32i4ghEX2SBKi2rq23Y4usEhhXip4FsX5gmvFhxYIxHNrJLec" />
+</div>
+        <script type="text/javascript">
+//<![CDATA[
+Sys.WebForms.PageRequestManager._initialize('ctl00$WebScriptManager1', 'form1', [], [], [], 90, 'ctl00');
+//]]>
+</script>
+
+        <div style="width:1022px;margin: 0px 0px 0px;" class="PAcontent">
+            
+
+
+<div style="width:100%;">
+
+<div style="font-size:10pt;width:100%;position:relative; top:-2px; ">
+    <!-- user login/basket -->
+    <div style="float:left;margin-left:20px;padding-top:1px; ">
+    
+    <div id="Header1_pnlWelcomeVisitor">
+	
+    Welcome Visitor. 
+    
+</div>
+    </div>
+    <div id="topRightBar" style="float:right;margin-right:10px; width:75%; text-align:right; padding-bottom:3px; ">
+        <table style="float:right;text-align:left;" border="0" cellpadding="0" cellspacing="0" role="presentation" ><tr>
+        <td style="max-width:800px; width:auto; text-align:center;">
+            <div style="padding-right:10px; ">
+            
+            
+            </div>
+        </td>
+        <td>
+            <div id="Header1_pnlLogin">
+	
+                <span id="Header1_lnkLogin" class="staticLink"><a href="javascript:displayLoginWindow();" class="staticLink" tabindex="10">Login</a></span>
+                
+                &nbsp;|&nbsp;&nbsp;
+            
+</div>
+        </td>
+        <td id="clearunderline">
+            <a id="Header1_lnkBasket" tabindex="10" href="../users/basket.aspx"><span style=" position:relative; top:3px;"><img title="shopping cart" border="0" src="../images/icons/cart.gif" style="height:16px;width:16px;" /></span> <span class="staticLink" style="position:relative; top:-1px;">View Basket<span id="_numBasketItems"></span></span></a>
+        </td></tr></table>
+    </div>
+
+</div>
+
+<input type="hidden" id="Header1_WebHDS_clientState" name="Header1_WebHDS_clientState" />
+<input type="hidden" id="Header1_WebDataMenu1_clientState" name="Header1_WebDataMenu1_clientState" /><div class="ig_ElectricBlueControl igdm_ElectricBlueControlHorizontal" id="Header1_WebDataMenu1" tabindex="20" style="border-color:Black;border-width:1px;border-style:Solid;width:1022px;display:none;">
+	<ul class="igdm_ElectricBlueMenuGroupHorizontalRoot ">
+		<li title="Welcome" data-ig="x:273746300.0:adr:0" class="igdm_ElectricBlueMenuItemHorizontalRoot mainMenuItem" unselectable="on" style="float:left;"><a accesskey="" href="/" tabindex="-1" class="igdm_ElectricBlueMenuItemHorizontalRootLink " onclick="{return false;}"><span title="Welcome" tabindex="-1" unselectable="on">Welcome</span></a></li><li class="igdm_ElectricBlueMenuItemHorizontalSeparator " data-ig="x:273746300.1:adr:1:mkr:sep" style="position:relative;float:left;width:1px;"></li><li title="Birth" data-ig="x:273746300.2:adr:2" class="igdm_ElectricBlueMenuItemHorizontalRoot igdm_ElectricBlueMenuItemHorizontalParent mainMenuItem" unselectable="on" style="float:left;"><a href="#" tabindex="-1" class="igdm_ElectricBlueMenuItemHorizontalRootLink " onclick="{return false;}"><span title="Birth" tabindex="-1" unselectable="on">Birth</span></a><ul class="igdm_ElectricBlueMenuGroupVertical " style="display:none;visibility:hidden;position:absolute;">
+			<li title="Search Birth Index" data-ig="x:273746300.3:adr:2.0" class="igdm_ElectricBlueMenuItemVertical mainMenuItem" unselectable="on"><a href="/Birth/SearchEntry.aspx" tabindex="-1" class="igdm_ElectricBlueMenuItemVerticalLink " onclick="{return false;}"><span title="Search Birth Index" tabindex="-1" unselectable="on">Search Birth Index</span></a></li>
+		</ul></li><li class="igdm_ElectricBlueMenuItemHorizontalSeparator " data-ig="x:273746300.4:adr:3:mkr:sep" style="position:relative;float:left;width:1px;"></li><li title="Death" data-ig="x:273746300.5:adr:4" class="igdm_ElectricBlueMenuItemHorizontalRoot igdm_ElectricBlueMenuItemHorizontalParent mainMenuItem" unselectable="on" style="float:left;"><a href="#" tabindex="-1" class="igdm_ElectricBlueMenuItemHorizontalRootLink " onclick="{return false;}"><span title="Death" tabindex="-1" unselectable="on">Death</span></a><ul class="igdm_ElectricBlueMenuGroupVertical " style="display:none;visibility:hidden;position:absolute;">
+			<li title="Search Death Index" data-ig="x:273746300.6:adr:4.0" class="igdm_ElectricBlueMenuItemVertical mainMenuItem" unselectable="on"><a href="/DEATH/SearchEntry.aspx" tabindex="-1" class="igdm_ElectricBlueMenuItemVerticalLink " onclick="{return false;}"><span title="Search Death Index" tabindex="-1" unselectable="on">Search Death Index</span></a></li>
+		</ul></li><li class="igdm_ElectricBlueMenuItemHorizontalSeparator " data-ig="x:273746300.7:adr:5:mkr:sep" style="position:relative;float:left;width:1px;"></li><li title="DBA" data-ig="x:273746300.8:adr:6" class="igdm_ElectricBlueMenuItemHorizontalRoot mainMenuItem" unselectable="on" style="float:left;"><a href="/RealEstate/Map/SearchEntry.aspx" tabindex="-1" class="igdm_ElectricBlueMenuItemHorizontalRootLink " onclick="{return false;}"><span title="DBA" tabindex="-1" unselectable="on">DBA</span></a></li><li class="igdm_ElectricBlueMenuItemHorizontalSeparator " data-ig="x:273746300.9:adr:7:mkr:sep" style="position:relative;float:left;width:1px;"></li><li title="Marriage" data-ig="x:273746300.10:adr:8" class="igdm_ElectricBlueMenuItemHorizontalRoot igdm_ElectricBlueMenuItemHorizontalParent mainMenuItem" unselectable="on" style="float:left;"><a href="#" tabindex="-1" class="igdm_ElectricBlueMenuItemHorizontalRootLink " onclick="{return false;}"><span title="Marriage" tabindex="-1" unselectable="on">Marriage</span></a><ul class="igdm_ElectricBlueMenuGroupVertical " style="display:none;visibility:hidden;position:absolute;">
+			<li title="Online Marriage Application" data-ig="x:273746300.11:adr:8.0" class="igdm_ElectricBlueMenuItemVertical mainMenuItem" unselectable="on"><a href="/Marriage/MarriageApplication.aspx" tabindex="-1" class="igdm_ElectricBlueMenuItemVerticalLink " onclick="{return false;}"><span title="Online Marriage Application" tabindex="-1" unselectable="on">Online Marriage Application</span></a></li><li title="Search Marriage Index" data-ig="x:273746300.12:adr:8.1" class="igdm_ElectricBlueMenuItemVertical mainMenuItem" unselectable="on"><a href="/Marriage/SearchEntry.aspx" tabindex="-1" class="igdm_ElectricBlueMenuItemVerticalLink " onclick="{return false;}"><span title="Search Marriage Index" tabindex="-1" unselectable="on">Search Marriage Index</span></a></li>
+		</ul></li><li class="igdm_ElectricBlueMenuItemHorizontalSeparator " data-ig="x:273746300.13:adr:9:mkr:sep" style="position:relative;float:left;width:1px;"></li><li title="My Account" data-ig="x:273746300.14:adr:10" class="igdm_ElectricBlueMenuItemHorizontalRoot igdm_ElectricBlueMenuItemHorizontalParent mainMenuItem" unselectable="on" style="display:none;float:left;"><a href="#" tabindex="-1" class="igdm_ElectricBlueMenuItemHorizontalRootLink " onclick="{return false;}"><span title="My Account" tabindex="-1" unselectable="on">My Account</span></a><ul class="igdm_ElectricBlueMenuGroupVertical " style="display:none;visibility:hidden;position:absolute;">
+			<li title="Certified Copy Validation" data-ig="x:273746300.15:adr:10.0" class="igdm_ElectricBlueMenuItemVertical mainMenuItem" unselectable="on"><a href="/RealEstate/CertifiedCopy/SearchEntry.aspx" tabindex="-1" class="igdm_ElectricBlueMenuItemVerticalLink " onclick="{return false;}"><span title="Certified Copy Validation" tabindex="-1" unselectable="on">Certified Copy Validation</span></a></li><li title="Change Password" data-ig="x:273746300.16:adr:10.1" class="igdm_ElectricBlueMenuItemVertical mainMenuItem" unselectable="on"><a href="/Users/PasswordChange.aspx" tabindex="-1" class="igdm_ElectricBlueMenuItemVerticalLink " onclick="{return false;}"><span title="Change Password" tabindex="-1" unselectable="on">Change Password</span></a></li><li title="Change Web Site Preferences" data-ig="x:273746300.17:adr:10.2" class="igdm_ElectricBlueMenuItemVertical mainMenuItem" unselectable="on"><a href="/Users/UserPreferences.aspx" tabindex="-1" class="igdm_ElectricBlueMenuItemVerticalLink " onclick="{return false;}"><span title="Change Web Site Preferences" tabindex="-1" unselectable="on">Change Web Site Preferences</span></a></li><li title="Electorincally Submit OPR Documents for Recording " data-ig="x:273746300.18:adr:10.3" class="igdm_ElectricBlueMenuItemVertical mainMenuItem" unselectable="on"><a href="/realestate/eSubmit.aspx" tabindex="-1" class="igdm_ElectricBlueMenuItemVerticalLink " onclick="{return false;}"><span title="Electorincally Submit OPR Documents for Recording " tabindex="-1" unselectable="on">Electorincally Submit OPR Documents for Recording </span></a></li><li title="ERequest History" data-ig="x:273746300.19:adr:10.4" class="igdm_ElectricBlueMenuItemVertical mainMenuItem" unselectable="on"><a href="/realestate/eStatus.aspx" tabindex="-1" class="igdm_ElectricBlueMenuItemVerticalLink " onclick="{return false;}"><span title="ERequest History" tabindex="-1" unselectable="on">ERequest History</span></a></li><li title="My Account Statement" data-ig="x:273746300.20:adr:10.5" class="igdm_ElectricBlueMenuItemVertical mainMenuItem" unselectable="on"><a href="/Users/AccountSummary.aspx" tabindex="-1" class="igdm_ElectricBlueMenuItemVerticalLink " onclick="{return false;}"><span title="My Account Statement" tabindex="-1" unselectable="on">My Account Statement</span></a></li><li title="My Activity Summary" data-ig="x:273746300.21:adr:10.6" class="igdm_ElectricBlueMenuItemVertical mainMenuItem" unselectable="on"><a href="/Users/SessionHistory.aspx" tabindex="-1" class="igdm_ElectricBlueMenuItemVerticalLink " onclick="{return false;}"><span title="My Activity Summary" tabindex="-1" unselectable="on">My Activity Summary</span></a></li><li title="My Export Jobs" data-ig="x:273746300.22:adr:10.7" class="igdm_ElectricBlueMenuItemVertical mainMenuItem" unselectable="on"><a href="/Export/" tabindex="-1" class="igdm_ElectricBlueMenuItemVerticalLink " onclick="{return false;}"><span title="My Export Jobs" tabindex="-1" unselectable="on">My Export Jobs</span></a></li><li title="My Profile" data-ig="x:273746300.23:adr:10.8" class="igdm_ElectricBlueMenuItemVertical mainMenuItem" unselectable="on"><a href="/Users/UserDetails.aspx" tabindex="-1" class="igdm_ElectricBlueMenuItemVerticalLink " onclick="{return false;}"><span title="My Profile" tabindex="-1" unselectable="on">My Profile</span></a></li><li title="My Request History" data-ig="x:273746300.24:adr:10.9" class="igdm_ElectricBlueMenuItemVertical mainMenuItem" unselectable="on"><a href="/Users/RequestHistory.aspx" tabindex="-1" class="igdm_ElectricBlueMenuItemVerticalLink " onclick="{return false;}"><span title="My Request History" tabindex="-1" unselectable="on">My Request History</span></a></li><li title="My Shopping Basket" data-ig="x:273746300.25:adr:10.10" class="igdm_ElectricBlueMenuItemVertical mainMenuItem" unselectable="on"><a href="/Users/Basket.aspx" tabindex="-1" class="igdm_ElectricBlueMenuItemVerticalLink " onclick="{return false;}"><span title="My Shopping Basket" tabindex="-1" unselectable="on">My Shopping Basket</span></a></li>
+		</ul></li><li class="igdm_ElectricBlueMenuItemHorizontalSeparator " data-ig="x:273746300.26:adr:11:mkr:sep" style="position:relative;float:left;width:1px;"></li><li title="Official Public Records" data-ig="x:273746300.27:adr:12" class="igdm_ElectricBlueMenuItemHorizontalRoot igdm_ElectricBlueMenuItemHorizontalRootSelected igdm_ElectricBlueMenuItemHorizontalParent mainMenuItem currentToolbarItem" unselectable="on" style="float:left;"><a href="#" tabindex="-1" class="igdm_ElectricBlueMenuItemHorizontalRootLink " onclick="{return false;}"><span title="Official Public Records" tabindex="-1" unselectable="on">Official Public Records</span></a><ul class="igdm_ElectricBlueMenuGroupVertical " style="display:none;visibility:hidden;position:absolute;">
+			<li title="Grantee List" data-ig="x:273746300.28:adr:12.0" class="igdm_ElectricBlueMenuItemVertical mainMenuItem" unselectable="on"><a href="/RealEstate/ListOfGrantees.aspx" tabindex="-1" class="igdm_ElectricBlueMenuItemVerticalLink " onclick="{return false;}"><span title="Grantee List" tabindex="-1" unselectable="on">Grantee List</span></a></li><li title="Grantor List" data-ig="x:273746300.29:adr:12.1" class="igdm_ElectricBlueMenuItemVertical mainMenuItem" unselectable="on"><a href="/RealEstate/ListOfGrantors.aspx" tabindex="-1" class="igdm_ElectricBlueMenuItemVerticalLink " onclick="{return false;}"><span title="Grantor List" tabindex="-1" unselectable="on">Grantor List</span></a></li><li title="Search Real Estate Index" data-ig="x:273746300.30:adr:12.2" class="igdm_ElectricBlueMenuItemVertical mainMenuItem" unselectable="on"><a href="/RealEstate/SearchEntry.aspx" tabindex="-1" class="igdm_ElectricBlueMenuItemVerticalLink " onclick="{return false;}"><span title="Search Real Estate Index" tabindex="-1" unselectable="on">Search Real Estate Index</span></a></li>
+		</ul></li><li class="igdm_ElectricBlueMenuItemHorizontalSeparator " data-ig="x:273746300.31:adr:13:mkr:sep" style="position:relative;float:left;width:1px;"></li><li title="FAQ" data-ig="x:273746300.32:adr:14" class="igdm_ElectricBlueMenuItemHorizontalRoot mainMenuItem" unselectable="on" style="float:left;"><a href="/localization/faq.aspx" tabindex="-1" class="igdm_ElectricBlueMenuItemHorizontalRootLink " onclick="{return false;}"><span title="FAQ" tabindex="-1" unselectable="on">FAQ</span></a></li>
+	</ul>
+</div>
+
+<div class="messageBar">
+<span style="margin:2px;"><span id="Header1_menuMsg">Official Public Records Document Access</span>
+</span>
+</div>
+</div>
+
+
+
+
+
+
+
+            <a name="maincontent" id="A1"></a>
+            <div class="mainContent">
+	        
+            
+            </div>
+            <div class="mainContentNoMargin">
+	        
+    <div class="SearchEntryHeader" >
+        <div style="float: left; width: 380px; padding-left: 2px; height: 50px; ">
+            <span id="cphNoMargin_lblSearchSummary">Permanent Index From 01/01/1838 to 04/20/2026<br>Temporary Index from 04/21/2026 to 04/23/2026<br>Images from 01/01/1838</span>
+        </div>
+        <div style="float:right;width:250px; text-align:right;">
+<div style="padding-right:2px; z-index:9999;">
+<span tabindex="25" onclick="javascript:showHelpWin();" class="staticLink" role="button" aria-label="Click here for Search Instructions">Click here for Search Instructions</span>
+</div>
+<script type="text/javascript">
+function showHelpWin() {
+	var h = 700;
+	var w = 500;
+	var l = 400;
+	var optns = "height=" + h.toString() + ",width=" + w.toString() + ",left=" + l.toString() + ",top=10,location=no,menubar=no,toolbar=no,scrollbars=yes,resizable=yes";
+	//alert(optns);
+	if (_helpWin != null) {
+		try { _mstr_closePopupWindow(); } catch (e) { }
+	}
+	_helpWin = window.open("/Controls/GetHelpText.aspx?id=OPR&t=Entry", "", optns, true);
+}
+
+</script>
+<br /><span class="Information">Press 'ESC' to cancel a Search&nbsp;&nbsp;</span></div>
+        <div class="SearchHeaderButtonArea">
+
+<table role="presentation" cellspacing="0" cellpadding="0" id="cphNoMargin_SearchButtons1_btnSearch__2" style="display:inline-table;width:120px;"><tr><td>
+	<table role="presentation" cellspacing="0" cellpadding="0" id="cphNoMargin_SearchButtons1_btnSearch__1" style="table-layout:fixed;cursor:Default;width:120px;height:24px;border-style:Solid;border-width:1px;border-color:#F0F0F0 #707070 #707070 #F0F0F0;">
+		<tr><td nowrap="nowrap" id="cphNoMargin_SearchButtons1_btnSearch__5" style="overflow:hidden;background-color:buttonface;padding:0px 1px 1px 0px;border-width:1px;border-style:Solid;border-color:White #A0A0A0 #A0A0A0 White;" align="Center" valign="Middle">
+			<span unselectable="on" id="cphNoMargin_SearchButtons1_btnSearch__3" style="border:0px;background:none;font-family:Arial;font-size:10pt;"><u>S</u>earch</span>
+			<input id="cphNoMargin_SearchButtons1_btnSearch" type="submit" size="0" style="font-size:2px;padding:0px;z-index:-1;border:0px;background:transparent;outline:0px;width:1px;height:1px;" name="ctl00$cphNoMargin$SearchButtons1$btnSearch" value="Search" accesskey="S" tabindex="25" />
+		</td></tr>
+	</table>
+</td></tr></table>
+<span style="padding-left:40px">
+
+<table role="presentation" cellspacing="0" cellpadding="0" id="cphNoMargin_SearchButtons1_btnClear__2" style="display:inline-table;width:120px;"><tr><td>
+	<table role="presentation" cellspacing="0" cellpadding="0" id="cphNoMargin_SearchButtons1_btnClear__1" style="table-layout:fixed;cursor:Default;width:120px;height:24px;border-style:Solid;border-width:1px;border-color:#F0F0F0 #707070 #707070 #F0F0F0;">
+		<tr><td nowrap="nowrap" id="cphNoMargin_SearchButtons1_btnClear__5" style="overflow:hidden;background-color:buttonface;padding:0px 1px 1px 0px;border-width:1px;border-style:Solid;border-color:White #A0A0A0 #A0A0A0 White;" align="Center" valign="Middle">
+			<span unselectable="on" id="cphNoMargin_SearchButtons1_btnClear__3" style="border:0px;background:none;font-family:Arial;font-size:10pt;"><u>C</u>lear Form</span>
+			<input id="cphNoMargin_SearchButtons1_btnClear" type="submit" size="0" style="font-size:2px;padding:0px;z-index:-1;border:0px;background:transparent;outline:0px;width:1px;height:1px;" name="ctl00$cphNoMargin$SearchButtons1$btnClear" value="Clear Form" accesskey="C" tabindex="25" />
+		</td></tr>
+	</table>
+</td></tr></table>
+</span></div>
+    </div>
+
+	<table height="100%" border="0" width="100%" cellpadding="2" cellspacing="2" role="presentation">
+		<tr>
+			<td colspan="1" align="center"><table id="cphNoMargin_tblValidations" class="Warning">
+
+</table></td>
+		</tr>
+		<tr>
+			<td id="cphNoMargin_TDPayment" align="center">
+				</td>
+
+		</tr>
+		<tr valign="top">
+			<td id="cphNoMargin_tdSearch">
+
+<div class="SearchHeaderLabel">General</div>
+<table class="SearchFrameStyle" role="presentation">
+    <tr>
+        <td colspan="5" style="padding-left: 50px">
+            <span class="fldLabel"><input id="cphNoMargin_f_rdoCombine" type="radio" name="ctl00$cphNoMargin$f$NameSearchMode" value="rdoCombine" checked="checked" onclick="toggleNameMode();" tabindex="50" /><label for="cphNoMargin_f_rdoCombine">Combined Name Search</label></span>
+        </td>
+    </tr>
+    <tr>
+        <td align="right" width="202">
+            <label for="cphNoMargin_f_txtParty" id="cphNoMargin_f_lblParty" class="fldLabel">Party Name:</label>
+        </td>
+        <td width="570" colspan="4">
+            <input type="hidden" id="cphNoMargin_f_txtParty_clientState" name="cphNoMargin_f_txtParty_clientState" /><input title="{0}" id="cphNoMargin_f_txtParty" readonly="readonly" name="cphNoMargin_f_txtParty" tabindex="50" class="igte_Edit" type="text" style="width:352px;text-align:notset;" />
+        </td>
+    </tr>
+    <tr>
+         <td align="right" width="202">
+             <label for="cphNoMargin_f_ddlSearchType" id="cphNoMargin_f_lblSearchType" class="fldLabel">Name&nbsp;Search&nbsp;Type:</label>
+         </td>
+         <td width="570" colspan="4">
+              <select name="ctl00$cphNoMargin$f$ddlSearchType" id="cphNoMargin_f_ddlSearchType" tabindex="50" style="width:150px;">
+	<option value=""></option>
+	<option value="LIKE">Begins With</option>
+	<option selected="selected" value="CONTAINS">Contains</option>
+	<option value="=">Exact Match</option>
+	<option value="SOUNDEX">Sounds Like</option>
+
+</select>
+         </td>     
+    </tr>
+    <tr>
+        <td align="right">
+            <label for="cphNoMargin_f_drbPartyType" id="cphNoMargin_f_Label2" class="fldLabel">Party Type:</label>
+        </td>
+        <td colspan="4">
+            <table role="presentation" id="cphNoMargin_f_drbPartyType" style="width:360px;">
+	<tr>
+		<td><input id="cphNoMargin_f_drbPartyType_0" type="radio" name="ctl00$cphNoMargin$f$drbPartyType" value="" checked="checked" tabindex="50" /><label for="cphNoMargin_f_drbPartyType_0">Both</label></td><td><input id="cphNoMargin_f_drbPartyType_1" type="radio" name="ctl00$cphNoMargin$f$drbPartyType" value="R" tabindex="50" /><label for="cphNoMargin_f_drbPartyType_1">Grantor</label></td><td><input id="cphNoMargin_f_drbPartyType_2" type="radio" name="ctl00$cphNoMargin$f$drbPartyType" value="E" tabindex="50" /><label for="cphNoMargin_f_drbPartyType_2">Grantee</label></td>
+	</tr>
+</table>
+        </td>
+    </tr>
+    <tr>
+        <td colspan="5" style="padding-left: 50px">
+            <span class="fldLabel"><input id="cphNoMargin_f_rdoSep" type="radio" name="ctl00$cphNoMargin$f$NameSearchMode" value="rdoSep" onclick="toggleNameMode();" tabindex="50" /><label for="cphNoMargin_f_rdoSep">Separate Name Search</label></span>
+        </td>
+    </tr>
+    <tr>
+        <td align="right" width="202">
+            <label for="cphNoMargin_f_txtGrantor" id="cphNoMargin_f_lblGrantor" class="fldLabel">Grantor:</label>
+        </td>
+        <td width="530" colspan="4">
+            <input type="hidden" id="cphNoMargin_f_txtGrantor_clientState" name="cphNoMargin_f_txtGrantor_clientState" /><input title="{0}" id="cphNoMargin_f_txtGrantor" readonly="readonly" name="cphNoMargin_f_txtGrantor" tabindex="50" class="igte_Edit" type="text" style="width:352px;text-align:notset;" />
+        </td>
+    </tr>
+    <tr>
+        <td align="right" width="202">
+            <label for="cphNoMargin_f_txtGrantee" id="cphNoMargin_f_lblGrantee" class="fldLabel">Grantee:</label>
+        </td>
+        <td colspan="4">
+            <input type="hidden" id="cphNoMargin_f_txtGrantee_clientState" name="cphNoMargin_f_txtGrantee_clientState" /><input title="{0}" id="cphNoMargin_f_txtGrantee" readonly="readonly" name="cphNoMargin_f_txtGrantee" tabindex="50" class="igte_Edit" type="text" style="width:352px;text-align:notset;" />
+        </td>
+    </tr>
+    <tr>
+        <td colspan="5">
+            <br />
+        </td>
+    </tr>
+    <tr>
+        <td nowrap align="right" height="32">
+            <label for="cphNoMargin_f_ddcDateFiledFrom" id="cphNoMargin_f_lblDateFiledFrom" class="fldLabel">Date Filed From:</label>
+        </td>
+        <td width="88" height="32">
+            <input type="hidden" id="cphNoMargin_f_ddcDateFiledFrom_clientState" name="cphNoMargin_f_ddcDateFiledFrom_clientState" /><table title="Date Filed From, format mm/dd/yyyy" id="cphNoMargin_f_ddcDateFiledFrom" class="igte_ElectricBlueEditWithButtons" cellspacing="0" cellpadding="0" border="0">
+	<tr>
+		<td class="igte_ElectricBlueInner" valign="top"><input tabindex="50" readonly="readonly" data-ig="x:2002578730.0:mkr:3" class="igte_ElectricBlueEditInContainer" type="text" style="ime-mode:disabled;padding:0px;float:left;height:100%;width:98%;" /></td><td data-ig="x:2002578730.1:mkr:2" align="center" valign="middle" class="igte_ElectricBlueButton igte_ElectricBlueButtonSize" style="line-height:1px;font-size:1px;"><img class="igte_ElectricBlueButtonImg" src="../ig_res/ElectricBlue/images/igte_custom.gif" alt="Drop Down Calendar" /></td>
+	</tr>
+</table>
+        </td>
+        <td align="right" width="60" height="32">
+            <label for="cphNoMargin_f_ddcDateFiledTo" id="cphNoMargin_f_lblDateFiledTo" class="fldLabel">To:</label>
+        </td>
+        <td width="100" nowrap>
+            <input type="hidden" id="cphNoMargin_f_ddcDateFiledTo_clientState" name="cphNoMargin_f_ddcDateFiledTo_clientState" /><table title="Date Filed To, format mm/dd/yyyy" id="cphNoMargin_f_ddcDateFiledTo" class="igte_ElectricBlueEditWithButtons" cellspacing="0" cellpadding="0" border="0">
+	<tr>
+		<td class="igte_ElectricBlueInner" valign="top"><input tabindex="50" readonly="readonly" data-ig="x:625521537.0:mkr:3" class="igte_ElectricBlueEditInContainer" type="text" style="ime-mode:disabled;padding:0px;float:left;height:100%;width:98%;" /></td><td data-ig="x:625521537.1:mkr:2" align="center" valign="middle" class="igte_ElectricBlueButton igte_ElectricBlueButtonSize" style="line-height:1px;font-size:1px;"><img class="igte_ElectricBlueButtonImg" src="../ig_res/ElectricBlue/images/igte_custom.gif" alt="Drop Down Calendar" /></td>
+	</tr>
+</table>
+        </td>
+        <td>
+            <span id="REEntryDateRangeHint" style="padding-left: 40px; position:relative; top: -7px;"">
+                <span id="cphNoMargin_f_Label1" class="fldLabelPickList">Select Date Range:</span>
+            </span>
+            <img alt="common date ranges" title="Click here for common date ranges." src="/images/ToolbarIcons/SelectDate.gif"
+                onclick="showSelectRange(this, event,'cphNoMargin_f_ddcDateFiledFrom', 'cphNoMargin_f_ddcDateFiledTo');"
+                style="cursor: pointer"  TabIndex="50"/>
+        </td>
+    </tr>
+    <tr>
+        <td align="right" width="202">
+            <label for="cphNoMargin_f_txtInstrumentNoFrom" id="cphNoMargin_f_lblInstrumentNoFrom" class="fldLabel">Instrument # From:</label>
+        </td>
+        <td width="88">
+            <input type="hidden" id="cphNoMargin_f_txtInstrumentNoFrom_clientState" name="cphNoMargin_f_txtInstrumentNoFrom_clientState" /><input title="{0}" id="cphNoMargin_f_txtInstrumentNoFrom" readonly="readonly" name="cphNoMargin_f_txtInstrumentNoFrom" tabindex="50" class="igte_Edit" type="text" style="text-align:notset;" />
+        </td>
+        <td align="right" width="60">
+            <label for="cphNoMargin_f_txtInstrumentNoTo" id="cphNoMargin_f_lblInstrumentNoTo" class="fldLabel">To:</label>
+        </td>
+        <td colspan="2">
+            <input type="hidden" id="cphNoMargin_f_txtInstrumentNoTo_clientState" name="cphNoMargin_f_txtInstrumentNoTo_clientState" /><input title="{0}" id="cphNoMargin_f_txtInstrumentNoTo" readonly="readonly" name="cphNoMargin_f_txtInstrumentNoTo" tabindex="50" class="igte_Edit" type="text" style="text-align:notset;" />
+        </td>
+    </tr>
+    <tr>
+        <td align="right" width="202">
+            <label for="cphNoMargin_f_txtBook" id="cphNoMargin_f_lblBook" class="fldLabel">Book:</label>
+        </td>
+        <td width="88">
+            <input type="hidden" id="cphNoMargin_f_txtBook_clientState" name="cphNoMargin_f_txtBook_clientState" /><input title="{0}" id="cphNoMargin_f_txtBook" readonly="readonly" name="cphNoMargin_f_txtBook" tabindex="50" class="igte_Edit" type="text" style="text-align:notset;" />
+        </td>
+        <td align="right" width="60">
+            <label for="cphNoMargin_f_txtPage" id="cphNoMargin_f_lblPage" class="fldLabel">Page:</label>
+        </td>
+        <td colspan="2">
+            <input type="hidden" id="cphNoMargin_f_txtPage_clientState" name="cphNoMargin_f_txtPage_clientState" /><input title="{0}" id="cphNoMargin_f_txtPage" readonly="readonly" name="cphNoMargin_f_txtPage" tabindex="50" class="igte_Edit" type="text" style="text-align:notset;" />
+        </td>
+    </tr>
+    <tr>
+        <td align="right" valign="top" width="202">
+            <label for="cphNoMargin_f_dclDocType" id="cphNoMargin_f_lblDocumentType" class="fldLabel">Document Type:</label>
+        </td>
+        <td colspan="3" valign="top">
+            <div class="checkboxFrame_5items">
+                <table role="presentation" id="cphNoMargin_f_dclDocType" style="width:90%;">
+	<tr>
+		<td><input id="cphNoMargin_f_dclDocType_0" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$0" tabindex="50" value="ABANDON" /><label for="cphNoMargin_f_dclDocType_0">ABANDONMENT</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_1" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$1" tabindex="50" value="AJ" /><label for="cphNoMargin_f_dclDocType_1">ABSTRACT OF JUDGMENT</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_2" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$2" tabindex="50" value="AFFDVT" /><label for="cphNoMargin_f_dclDocType_2">AFFIDAVIT</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_3" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$3" tabindex="50" value="AGREEMNT" /><label for="cphNoMargin_f_dclDocType_3">AGREEMENT</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_4" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$4" tabindex="50" value="AMENDMNT" /><label for="cphNoMargin_f_dclDocType_4">AMENDMENT</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_5" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$5" tabindex="50" value="ANNEX" /><label for="cphNoMargin_f_dclDocType_5">ANNEXATION</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_6" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$6" tabindex="50" value="APPLICTN" /><label for="cphNoMargin_f_dclDocType_6">APPLICATION</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_7" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$7" tabindex="50" value="APPOINT" /><label for="cphNoMargin_f_dclDocType_7">APPOINTMENT</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_8" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$8" tabindex="50" value="ARTICLES" /><label for="cphNoMargin_f_dclDocType_8">ARTICLES</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_9" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$9" tabindex="50" value="ASSIGNMT" /><label for="cphNoMargin_f_dclDocType_9">ASSIGNMENT</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_10" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$10" tabindex="50" value="ASSUMED" /><label for="cphNoMargin_f_dclDocType_10">ASSUMED NAME</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_11" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$11" tabindex="50" value="BANKRUPT" /><label for="cphNoMargin_f_dclDocType_11">BANKRUPTCY</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_12" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$12" tabindex="50" value="BOS" /><label for="cphNoMargin_f_dclDocType_12">BILL OF SALE</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_13" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$13" tabindex="50" value="BOND" /><label for="cphNoMargin_f_dclDocType_13">BOND</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_14" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$14" tabindex="50" value="BRAND" /><label for="cphNoMargin_f_dclDocType_14">BRAND</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_15" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$15" tabindex="50" value="CERT" /><label for="cphNoMargin_f_dclDocType_15">CERTIFICATE</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_16" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$16" tabindex="50" value="CONSENT" /><label for="cphNoMargin_f_dclDocType_16">CONSENT</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_17" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$17" tabindex="50" value="CONTRACT" /><label for="cphNoMargin_f_dclDocType_17">CONTRACT</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_18" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$18" tabindex="50" value="CORRECT" /><label for="cphNoMargin_f_dclDocType_18">CORRECTION</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_19" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$19" tabindex="50" value="COURTREC" /><label for="cphNoMargin_f_dclDocType_19">COURT RECORDS</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_20" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$20" tabindex="50" value="DEDICATE" /><label for="cphNoMargin_f_dclDocType_20">DEDICATION</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_21" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$21" tabindex="50" value="DEED" /><label for="cphNoMargin_f_dclDocType_21">DEED</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_22" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$22" tabindex="50" value="DTRUST" /><label for="cphNoMargin_f_dclDocType_22">DEED OF TRUST</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_23" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$23" tabindex="50" value="DEPUTA" /><label for="cphNoMargin_f_dclDocType_23">DEPUTATION</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_24" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$24" tabindex="50" value="DESIGNAT" /><label for="cphNoMargin_f_dclDocType_24">DESIGNATION</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_25" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$25" tabindex="50" value="DISCHRGE" /><label for="cphNoMargin_f_dclDocType_25">DISCHARGE</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_26" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$26" tabindex="50" value="DISCLOSURE" /><label for="cphNoMargin_f_dclDocType_26">DISCLOSURE</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_27" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$27" tabindex="50" value="EASEMENT" /><label for="cphNoMargin_f_dclDocType_27">EASEMENT</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_28" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$28" tabindex="50" value="ENCROACH" /><label for="cphNoMargin_f_dclDocType_28">ENCROACHMENT</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_29" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$29" tabindex="50" value="ESTRAY" /><label for="cphNoMargin_f_dclDocType_29">ESTRAY</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_30" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$30" tabindex="50" value="EXTENSON" /><label for="cphNoMargin_f_dclDocType_30">EXTENSION</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_31" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$31" tabindex="50" value="FEDLIEN" /><label for="cphNoMargin_f_dclDocType_31">FEDERAL LIEN</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_32" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$32" tabindex="50" value="CONCLU LAW" /><label for="cphNoMargin_f_dclDocType_32">FIND FACT CONCLU LAW</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_33" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$33" tabindex="50" value="GRANT" /><label for="cphNoMargin_f_dclDocType_33">GRANT</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_34" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$34" tabindex="50" value="HEIRSHIP" /><label for="cphNoMargin_f_dclDocType_34">HEIRSHIP</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_35" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$35" tabindex="50" value="HOMEEQUITY" /><label for="cphNoMargin_f_dclDocType_35">HOME EQUITY LOAN MORTGAGE</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_36" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$36" tabindex="50" value="HOME" /><label for="cphNoMargin_f_dclDocType_36">HOMESTEAD</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_37" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$37" tabindex="50" value="JUDGE" /><label for="cphNoMargin_f_dclDocType_37">JUDGMENT</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_38" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$38" tabindex="50" value="LEASE" /><label for="cphNoMargin_f_dclDocType_38">LEASE</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_39" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$39" tabindex="50" value="LICENSE" /><label for="cphNoMargin_f_dclDocType_39">LICENSE</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_40" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$40" tabindex="50" value="LIEN" /><label for="cphNoMargin_f_dclDocType_40">LIEN</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_41" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$41" tabindex="50" value="LISPEN" /><label for="cphNoMargin_f_dclDocType_41">LIS PENDENS</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_42" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$42" tabindex="50" value="MASTERD" /><label for="cphNoMargin_f_dclDocType_42">MASTER DEED OF TRUST</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_43" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$43" tabindex="50" value="MEMO" /><label for="cphNoMargin_f_dclDocType_43">MEMORANDUM</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_44" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$44" tabindex="50" value="MERGER" /><label for="cphNoMargin_f_dclDocType_44">MERGER</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_45" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$45" tabindex="50" value="MISC" /><label for="cphNoMargin_f_dclDocType_45">MISCELLANEOUS</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_46" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$46" tabindex="50" value="MOD" /><label for="cphNoMargin_f_dclDocType_46">MODIFICATION</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_47" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$47" tabindex="50" value="NOTICE" /><label for="cphNoMargin_f_dclDocType_47">NOTICE</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_48" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$48" tabindex="50" value="OATH" /><label for="cphNoMargin_f_dclDocType_48">OATH</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_49" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$49" tabindex="50" value="OILGAS" /><label for="cphNoMargin_f_dclDocType_49">OIL, GAS AND MINERAL LEASE</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_50" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$50" tabindex="50" value="ORDER" /><label for="cphNoMargin_f_dclDocType_50">ORDER</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_51" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$51" tabindex="50" value="ORD" /><label for="cphNoMargin_f_dclDocType_51">ORDINANCE</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_52" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$52" tabindex="50" value="PARTREL" /><label for="cphNoMargin_f_dclDocType_52">PARTIAL RELEASE</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_53" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$53" tabindex="50" value="PETITION" /><label for="cphNoMargin_f_dclDocType_53">PETITION</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_54" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$54" tabindex="50" value="PLAT" /><label for="cphNoMargin_f_dclDocType_54">PLAT</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_55" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$55" tabindex="50" value="PLAT ATTACH" /><label for="cphNoMargin_f_dclDocType_55">PLAT ATTACHMENT</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_56" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$56" tabindex="50" value="POWER" /><label for="cphNoMargin_f_dclDocType_56">POWER OF ATTORNEY</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_57" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$57" tabindex="50" value="RATIFY" /><label for="cphNoMargin_f_dclDocType_57">RATIFICATION</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_58" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$58" tabindex="50" value="REJECT" /><label for="cphNoMargin_f_dclDocType_58">REJECTED DOCUMENT</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_59" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$59" tabindex="50" value="RELEASE" /><label for="cphNoMargin_f_dclDocType_59">RELEASE</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_60" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$60" tabindex="50" value="RFL" /><label for="cphNoMargin_f_dclDocType_60">RELEASE FEDERAL LIEN</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_61" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$61" tabindex="50" value="ROB" /><label for="cphNoMargin_f_dclDocType_61">RELEASE OF BOND</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_62" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$62" tabindex="50" value="RSL" /><label for="cphNoMargin_f_dclDocType_62">RELEASE STATE LIEN</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_63" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$63" tabindex="50" value="RESCISSION" /><label for="cphNoMargin_f_dclDocType_63">RESCISSION</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_64" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$64" tabindex="50" value="RESIGN" /><label for="cphNoMargin_f_dclDocType_64">RESIGNATION</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_65" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$65" tabindex="50" value="RES" /><label for="cphNoMargin_f_dclDocType_65">RESOLUTION</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_66" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$66" tabindex="50" value="RESTRICT" /><label for="cphNoMargin_f_dclDocType_66">RESTRICTIONS</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_67" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$67" tabindex="50" value="ROW" /><label for="cphNoMargin_f_dclDocType_67">RIGHT OF WAY</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_68" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$68" tabindex="50" value="STLIEN" /><label for="cphNoMargin_f_dclDocType_68">STATE LIEN</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_69" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$69" tabindex="50" value="SUB" /><label for="cphNoMargin_f_dclDocType_69">SUBORDINATION</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_70" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$70" tabindex="50" value="SFL" /><label for="cphNoMargin_f_dclDocType_70">SUBORDINATION OF FEDERAL TAX LIEN</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_71" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$71" tabindex="50" value="UNKNOWN" /><label for="cphNoMargin_f_dclDocType_71">SYSTEM - DO NOT DELETE</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_72" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$72" tabindex="50" value="TRANSFER" /><label for="cphNoMargin_f_dclDocType_72">TRANSFER</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_73" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$73" tabindex="50" value="TRUST" /><label for="cphNoMargin_f_dclDocType_73">TRUST</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_74" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$74" tabindex="50" value="UCC1NSOP" /><label for="cphNoMargin_f_dclDocType_74">UCC 1 NS OPR</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_75" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$75" tabindex="50" value="UCC3OPR" /><label for="cphNoMargin_f_dclDocType_75">UCC 3 OPR</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_76" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$76" tabindex="50" value="UCC1OPR" /><label for="cphNoMargin_f_dclDocType_76">UCC1 OPR</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_77" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$77" tabindex="50" value="UCC3NSOP" /><label for="cphNoMargin_f_dclDocType_77">UCC3 NS OPR</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_78" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$78" tabindex="50" value="UTILITY" /><label for="cphNoMargin_f_dclDocType_78">UTILITY NOTICE</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_79" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$79" tabindex="50" value="VARIANCE" /><label for="cphNoMargin_f_dclDocType_79">VARIANCE</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_80" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$80" tabindex="50" value="VITAL" /><label for="cphNoMargin_f_dclDocType_80">VITAL RECORDS</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_81" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$81" tabindex="50" value="VOID" /><label for="cphNoMargin_f_dclDocType_81">VOID</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_82" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$82" tabindex="50" value="WITHDRAW" /><label for="cphNoMargin_f_dclDocType_82">WITHDRAWAL</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_83" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$83" tabindex="50" value="WFL" /><label for="cphNoMargin_f_dclDocType_83">WITHDRAWAL FED LIEN</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_84" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$84" tabindex="50" value="WDBA" /><label for="cphNoMargin_f_dclDocType_84">WITHDRAWAL OF ASSUMED NAME</label></td>
+	</tr><tr>
+		<td><input id="cphNoMargin_f_dclDocType_85" type="checkbox" name="ctl00$cphNoMargin$f$dclDocType$85" tabindex="50" value="WDBAN" /><label for="cphNoMargin_f_dclDocType_85">WITHDRAWAL OF ASSUMED NAME/NOT</label></td>
+	</tr>
+</table>
+            </div>
+        </td>
+        <td>
+            <img alt="select multiple doc types" title="Click here to select multiple document types."
+                src="/images/icons/selectmultiplelarge.gif" onclick="showPoupWindow('PopupOfDocTypes.aspx?dest=cphNoMargin_f_dclDocType', '600px', '650px', 'Document Type Selection');return false;"
+                style="cursor: pointer"  TabIndex="50"/>
+        </td>
+    </tr>
+</table>
+
+<div class="SearchHeaderLabel">Legal Description</div>
+<table class="SearchFrameStyle" role="presentation">
+    <tr>
+        <td align="right">
+            <label for="cphNoMargin_f_DataTextEdit1" id="cphNoMargin_f_lblLDSubDivision" class="fldLabel">Subdivision:</label>
+        </td>
+        <td colspan="7">
+            <input type="hidden" id="cphNoMargin_f_DataTextEdit1_clientState" name="cphNoMargin_f_DataTextEdit1_clientState" /><input title="{0}" id="cphNoMargin_f_DataTextEdit1" readonly="readonly" name="cphNoMargin_f_DataTextEdit1" tabindex="50" class="igte_Edit" type="text" style="width:500px;text-align:notset;" />
+			      <a href="ListOfSubdivisions.aspx" aria-label="Pick a subdivision from a list" role="button" tabindex="50"><img src="../images/icons/namelist.gif" border="0" alt="Subdivision List link icon"  /></a>
+        </td>
+    </tr>
+    <tr>    
+        <td align="right">
+            <label for="cphNoMargin_f_txtLDLot" id="cphNoMargin_f_lblLDLot" class="fldLabel">Lot:</label>
+        </td>
+        <td>
+            <input type="hidden" id="cphNoMargin_f_txtLDLot_clientState" name="cphNoMargin_f_txtLDLot_clientState" /><input title="{0}" id="cphNoMargin_f_txtLDLot" readonly="readonly" name="cphNoMargin_f_txtLDLot" tabindex="50" class="igte_Edit" type="text" style="text-align:notset;" />
+        </td>
+        <td align="right">
+            <label for="cphNoMargin_f_txtLDBook" id="cphNoMargin_f_lblLDBook" class="fldLabel">Block:</label>
+        </td>
+        <td>
+            <input type="hidden" id="cphNoMargin_f_txtLDBook_clientState" name="cphNoMargin_f_txtLDBook_clientState" /><input title="{0}" id="cphNoMargin_f_txtLDBook" readonly="readonly" name="cphNoMargin_f_txtLDBook" tabindex="50" class="igte_Edit" type="text" style="text-align:notset;" />
+        </td>
+        <td align="right" >
+            <label for="cphNoMargin_f_txtLDSection" id="cphNoMargin_f_lblLDSection" class="fldLabel">Section:</label>
+        </td>
+        <td>
+            <input type="hidden" id="cphNoMargin_f_txtLDSection_clientState" name="cphNoMargin_f_txtLDSection_clientState" /><input title="{0}" id="cphNoMargin_f_txtLDSection" readonly="readonly" name="cphNoMargin_f_txtLDSection" tabindex="50" class="igte_Edit" type="text" style="text-align:notset;" />
+        </td>
+    </tr>
+    
+    <tr>
+        <td align="right" >
+            <label for="cphNoMargin_f_txtLDStreetAddress" id="cphNoMargin_f_lblLDStreetAddress" class="fldLabel">Street Address:</label>
+        </td>
+        <td colspan="3">
+            <input type="hidden" id="cphNoMargin_f_txtLDStreetAddress_clientState" name="cphNoMargin_f_txtLDStreetAddress_clientState" /><input title="{0}" id="cphNoMargin_f_txtLDStreetAddress" readonly="readonly" name="cphNoMargin_f_txtLDStreetAddress" tabindex="50" class="igte_Edit" type="text" style="width:380px;text-align:notset;" />
+        </td>
+        <td align="right">
+            <label for="cphNoMargin_f_ddlTown" id="cphNoMargin_f_lblLDTown" class="fldLabel">Town:</label>
+        </td>
+        <td colspan="3">
+            <select name="ctl00$cphNoMargin$f$ddlTown" id="cphNoMargin_f_ddlTown" tabindex="50" style="width:350px;">
+	<option selected="selected" value=""></option>
+	<option value="ARCOLA">ARCOLA</option>
+	<option value="BEASLEY">BEASLEY</option>
+	<option value="FAIRCHILDS">FAIRCHILDS</option>
+	<option value="FRESNO">FRESNO</option>
+	<option value="FULSHEAR">FULSHEAR</option>
+	<option value="GUY">GUY</option>
+	<option value="KATY">KATY</option>
+	<option value="KENDLETON">KENDLETON</option>
+	<option value="MEADOWS PLACE">MEADOWS PLACE</option>
+	<option value="MISSOURI CITY">MISSOURI CITY</option>
+	<option value="NEEDVILLE">NEEDVILLE</option>
+	<option value="ORCHARD">ORCHARD</option>
+	<option value="PEARLAND">PEARLAND</option>
+	<option value="PLEAK">PLEAK</option>
+	<option value="RICHMOND">RICHMOND</option>
+	<option value="ROSENBERG">ROSENBERG</option>
+	<option value="SIMONTON">SIMONTON</option>
+	<option value="STAFFORD">STAFFORD</option>
+	<option value="SUGAR LAND">SUGAR LAND</option>
+	<option value="THOMPSONS">THOMPSONS</option>
+	<option value="WESTON LAKES">WESTON LAKES</option>
+
+</select>
+
+        </td>
+    </tr>
+    <tr>
+        <td align="right">
+            <label for="cphNoMargin_f_txtLDFreeForm" id="cphNoMargin_f_lblLDFreeForm" class="fldLabel">Freeform Legal:</label>
+        </td>
+        <td colspan="5">
+            <input type="hidden" id="cphNoMargin_f_txtLDFreeForm_clientState" name="cphNoMargin_f_txtLDFreeForm_clientState" /><input title="{0}" id="cphNoMargin_f_txtLDFreeForm" readonly="readonly" name="cphNoMargin_f_txtLDFreeForm" tabindex="50" class="igte_Edit" type="text" style="width:500px;text-align:notset;" />
+        </td>
+    </tr>
+    
+    <tr>    
+        <td align="right">
+            <label for="cphNoMargin_f_txtLDVolume" id="cphNoMargin_f_lblLDVolume" class="fldLabel">Volume:</label>
+        </td>
+        <td>
+            <input type="hidden" id="cphNoMargin_f_txtLDVolume_clientState" name="cphNoMargin_f_txtLDVolume_clientState" /><input title="{0}" id="cphNoMargin_f_txtLDVolume" readonly="readonly" name="cphNoMargin_f_txtLDVolume" tabindex="50" class="igte_Edit" type="text" style="text-align:notset;" />
+        </td>
+        <td align="right">
+            <label for="cphNoMargin_f_txtLDPage" id="cphNoMargin_f_lblLDPage" class="fldLabel">Page:</label>
+        </td>
+        <td>
+            <input type="hidden" id="cphNoMargin_f_txtLDPage_clientState" name="cphNoMargin_f_txtLDPage_clientState" /><input title="{0}" id="cphNoMargin_f_txtLDPage" readonly="readonly" name="cphNoMargin_f_txtLDPage" tabindex="50" class="igte_Edit" type="text" style="text-align:notset;" />
+        </td>
+        <td align="right" >
+            <label for="cphNoMargin_f_txtLDMapcase" id="cphNoMargin_f_lblLDMapcase" class="fldLabel">Mapcase:</label>
+        </td>
+        <td>
+            <input type="hidden" id="cphNoMargin_f_txtLDMapcase_clientState" name="cphNoMargin_f_txtLDMapcase_clientState" /><input title="{0}" id="cphNoMargin_f_txtLDMapcase" readonly="readonly" name="cphNoMargin_f_txtLDMapcase" tabindex="50" class="igte_Edit" type="text" style="text-align:notset;" />
+        </td>
+        <td align="right" >
+            <label for="cphNoMargin_f_txtLDSlide" id="cphNoMargin_f_ldlLDSlide" class="fldLabel">Slide:</label>
+        </td>
+        <td>
+            <input type="hidden" id="cphNoMargin_f_txtLDSlide_clientState" name="cphNoMargin_f_txtLDSlide_clientState" /><input title="{0}" id="cphNoMargin_f_txtLDSlide" readonly="readonly" name="cphNoMargin_f_txtLDSlide" tabindex="50" class="igte_Edit" type="text" style="text-align:notset;" />
+        </td>
+    </tr>
+</table>
+
+&nbsp; 
+
+<script type="text/javascript">
+
+	rdoC = document.getElementById("cphNoMargin_f_rdoCombine");
+	rdoS = document.getElementById("cphNoMargin_f_rdoSep");
+	_CombineCtlList = ["cphNoMargin_f_txtParty", "cphNoMargin_f_drbPartyType_0", "cphNoMargin_f_drbPartyType_1", "cphNoMargin_f_drbPartyType_2"]
+	_SepCtrlList = ["cphNoMargin_f_txtGrantor", "cphNoMargin_f_txtGrantee"];
+
+</script>
+</td>
+
+		</tr>
+		<tr>
+			<td align="center">
+                
+
+<table role="presentation" cellspacing="0" cellpadding="0" id="cphNoMargin_SearchButtons2_btnSearch__2" style="display:inline-table;width:120px;"><tr><td>
+	<table role="presentation" cellspacing="0" cellpadding="0" id="cphNoMargin_SearchButtons2_btnSearch__1" style="table-layout:fixed;cursor:Default;width:120px;height:24px;border-style:Solid;border-width:1px;border-color:#F0F0F0 #707070 #707070 #F0F0F0;">
+		<tr><td nowrap="nowrap" id="cphNoMargin_SearchButtons2_btnSearch__5" style="overflow:hidden;background-color:buttonface;padding:0px 1px 1px 0px;border-width:1px;border-style:Solid;border-color:White #A0A0A0 #A0A0A0 White;" align="Center" valign="Middle">
+			<span unselectable="on" id="cphNoMargin_SearchButtons2_btnSearch__3" style="border:0px;background:none;font-family:Arial;font-size:10pt;"><u>S</u>earch</span>
+			<input id="cphNoMargin_SearchButtons2_btnSearch" type="submit" size="0" style="font-size:2px;padding:0px;z-index:-1;border:0px;background:transparent;outline:0px;width:1px;height:1px;" name="ctl00$cphNoMargin$SearchButtons2$btnSearch" value="Search" accesskey="S" tabindex="75" />
+		</td></tr>
+	</table>
+</td></tr></table>
+<span style="padding-left:40px">
+
+<table role="presentation" cellspacing="0" cellpadding="0" id="cphNoMargin_SearchButtons2_btnClear__2" style="display:inline-table;width:120px;"><tr><td>
+	<table role="presentation" cellspacing="0" cellpadding="0" id="cphNoMargin_SearchButtons2_btnClear__1" style="table-layout:fixed;cursor:Default;width:120px;height:24px;border-style:Solid;border-width:1px;border-color:#F0F0F0 #707070 #707070 #F0F0F0;">
+		<tr><td nowrap="nowrap" id="cphNoMargin_SearchButtons2_btnClear__5" style="overflow:hidden;background-color:buttonface;padding:0px 1px 1px 0px;border-width:1px;border-style:Solid;border-color:White #A0A0A0 #A0A0A0 White;" align="Center" valign="Middle">
+			<span unselectable="on" id="cphNoMargin_SearchButtons2_btnClear__3" style="border:0px;background:none;font-family:Arial;font-size:10pt;"><u>C</u>lear Form</span>
+			<input id="cphNoMargin_SearchButtons2_btnClear" type="submit" size="0" style="font-size:2px;padding:0px;z-index:-1;border:0px;background:transparent;outline:0px;width:1px;height:1px;" name="ctl00$cphNoMargin$SearchButtons2$btnClear" value="Clear Form" accesskey="C" tabindex="75" />
+		</td></tr>
+	</table>
+</td></tr></table>
+</span>
+            </td>
+		</tr>
+		<tr>
+			<td align="center">
+
+</td>
+		</tr>
+	</table>
+
+
+    <input type="hidden" id="cphNoMargin_dlgPopup_clientState" name="cphNoMargin_dlgPopup_clientState" /><div class="ig_ElectricBlueControl igdw_ElectricBlueControl :=CtlMain:layout" id="cphNoMargin_dlgPopup" style="visibility:hidden;overflow:hidden;position:absolute;display:none;">
+	<div data-ig="x:955542082.0:obj:header" class="ig_ElectricBlueHeader igdw_ElectricBlueHeaderArea" style="overflow:hidden;">
+		<table cellpadding="0" cellspacing="0" style="width:100%;height:100%;table-layout:fixed;">
+			<tr>
+				<td data-ig="x:955542082.1:mkr:8" class="igdw_ElectricBlueHeaderCornerLeft">&nbsp;</td><td data-ig="x:955542082.2:mkr:7" class="igdw_ElectricBlueHeaderContent" style="white-space:nowrap;overflow:hidden;"><span data-ig="x:955542082.3:mkr:1" class="igdw_ElectricBlueHeaderCaption">Document Type List</span></td><td class="igdw_ElectricBlueHeaderContent igdw_ElectricBlueHeaderButtonArea" style="width:15px;text-align:right;white-space:nowrap;"><img alt="Close" data-ig="x:955542082.4:mkr:Close" src="../ig_res/ElectricBlue/images/igdw_Close.gif" /></td><td data-ig="x:955542082.5:mkr:9" class="igdw_ElectricBlueHeaderCornerRight">&nbsp;</td>
+			</tr>
+		</table>
+	</div><div data-ig="x:955542082.6:obj:body">
+		<table cellpadding="0" cellspacing="0" style="width:100%;table-layout:fixed;">
+			<tr>
+				<td data-ig="x:955542082.7:mkr:10" class="igdw_ElectricBlueBodyEdgeLeft">&nbsp;</td><td data-ig="x:955542082.8:mkr:11" class="igdw_ElectricBlueBodyContentArea"><div class="igdw_ElectricBlueBodyContent" data-ig="x:955542082.9:mkr:16" style="overflow:Auto;background-color:AliceBlue;width:100%;height:100%;">
+					
+            <iframe id="ifrPopup" src="javascript:'<html lang=&quot;en&quot; />'" title="Document Type List" allowtransparency="true" style="height:99%; width:99%;" frameborder="0" ></iframe>
+        
+				</div></td><td data-ig="x:955542082.10:mkr:12" class="igdw_ElectricBlueBodyEdgeRight">&nbsp;</td>
+			</tr><tr>
+				<td data-ig="x:955542082.11:mkr:13" class="igdw_ElectricBlueBodyCornerBottomLeft">&nbsp;</td><td data-ig="x:955542082.12:mkr:14" class="igdw_ElectricBlueBodyEdgeBottom">&nbsp;</td><td data-ig="x:955542082.13:mkr:15" class="igdw_ElectricBlueBodyCornerBottomRight">&nbsp;</td>
+			</tr>
+		</table>
+	</div>
+</div>
+
+
+<script type="text/javascript">
+    function toggleNameMode() {
+        if (rdoC != null && rdoC.checked) {
+            resetCtrl(_CombineCtlList, true);
+            resetCtrl(_SepCtrlList, false);
+        }
+        if (rdoS != null && rdoS.checked) {
+            resetCtrl(_CombineCtlList, false);
+            resetCtrl(_SepCtrlList, true);
+        }
+    }
+    function resetCtrl(ctlList, b) {
+        var o;
+        for (var idx = 0; idx < ctlList.length; idx++) {
+            o = document.getElementById(ctlList[idx]);
+            if (!b) {
+                if (o.options) {
+                    o.selectedIndex = 0;
+                }
+                else if (ctlList[idx].indexOf('drbPartyType_0') > -1) {
+                    o.checked = true;
+                }
+                else {
+                	var ctl = $find(ctlList[idx]);
+                	if (ctl != null) {
+                		ctl.set_value('');
+                	}
+                	else {
+                		o.value = "";
+                	}
+                }
+                o.disabled = true;
+                o.readOnly = true;
+                o.setAttribute("class", "disabled");
+            }
+            else {
+                o.disabled = false;
+                o.readOnly = false;
+                o.setAttribute("class", "");
+            }
+            if (idx == 0 && b) {
+                o.focus();
+            }
+        }
+    }
+
+    toggleNameMode();
+</script>
+
+            </div>
+
+            <div class="footer" >
+                
+<table id="tblFooter" width="100%" border="0" role="presentation">
+	<tbody>
+		<tr>
+			<td align="center" style="font-weight:normal; font-size:8pt; color:black; font-family:Arial">
+				<div id="Footer1_pnlFooterMessage">
+
+</div>Aumentum Recorder - Public 
+				Access Web UI,
+				<span id="Footer1_version" title="2023.1.2.34 Built 04/07/2026 01:39:16 PM">Version 2023.1.2</span>
+				<br />
+				Copyright © 2001 -
+				<span id="Footer1_thisYear">2026</span>
+				&nbsp;<a tabindex="-1" class="HartLink" href="https://www.harrisrecordingsolutions.com/products/aumentum-recorder/" target="_blank">Harris Recording Solutions.</a> All Rights Reserved
+			</td>
+		</tr>
+	</tbody>
+</table>
+
+            </div>
+
+			<input type="hidden" id="dlgOptionWindow_clientState" name="dlgOptionWindow_clientState" /><div class="ig_ElectricBlueControl igdw_ElectricBlueControl :=CtlMain:layout" id="dlgOptionWindow" style="height:550px;width:700px;visibility:hidden;overflow:hidden;position:absolute;display:none;">
+	<div data-ig="x:797756677.0:obj:header" class="ig_ElectricBlueHeader igdw_ElectricBlueHeaderArea" style="overflow:hidden;">
+		<table cellpadding="0" cellspacing="0" style="width:100%;height:100%;table-layout:fixed;">
+			<tr>
+				<td data-ig="x:797756677.1:mkr:8" class="igdw_ElectricBlueHeaderCornerLeft">&nbsp;</td><td data-ig="x:797756677.2:mkr:7" class="igdw_ElectricBlueHeaderContent" style="white-space:nowrap;overflow:hidden;"><span data-ig="x:797756677.3:mkr:1" class="igdw_ElectricBlueHeaderCaption">Copy Options</span></td><td class="igdw_ElectricBlueHeaderContent igdw_ElectricBlueHeaderButtonArea" style="width:15px;text-align:right;white-space:nowrap;"><img alt="Close" data-ig="x:797756677.4:mkr:Close" src="../ig_res/ElectricBlue/images/igdw_Close.gif" /></td><td data-ig="x:797756677.5:mkr:9" class="igdw_ElectricBlueHeaderCornerRight">&nbsp;</td>
+			</tr>
+		</table>
+	</div><div data-ig="x:797756677.6:obj:body">
+		<table cellpadding="0" cellspacing="0" style="width:100%;table-layout:fixed;">
+			<tr>
+				<td data-ig="x:797756677.7:mkr:10" class="igdw_ElectricBlueBodyEdgeLeft">&nbsp;</td><td data-ig="x:797756677.8:mkr:11" class="igdw_ElectricBlueBodyContentArea"><div class="igdw_ElectricBlueBodyContent" data-ig="x:797756677.9:mkr:16" style="overflow:Auto;background-color:AliceBlue;width:100%;height:100%;">
+					
+						<iframe id="ifrOptionWindow" src="javascript:'<html lang=&quot;en&quot; />'" allowtransparency="true" style="height:99%; width:685px;" frameborder="0" title="Copy Options" ></iframe>
+					
+				</div></td><td data-ig="x:797756677.10:mkr:12" class="igdw_ElectricBlueBodyEdgeRight">&nbsp;</td>
+			</tr><tr>
+				<td data-ig="x:797756677.11:mkr:13" class="igdw_ElectricBlueBodyCornerBottomLeft">&nbsp;</td><td data-ig="x:797756677.12:mkr:14" class="igdw_ElectricBlueBodyEdgeBottom">&nbsp;</td><td data-ig="x:797756677.13:mkr:15" class="igdw_ElectricBlueBodyCornerBottomRight">&nbsp;</td>
+			</tr>
+		</table>
+	</div>
+</div>
+        </div>                
+        <input type="hidden" id="RangeContextMenu_clientState" name="RangeContextMenu_clientState" /><div class="ig_Control igdm_ControlVertical" id="RangeContextMenu" style="position:absolute;z-index:12000;top:-1000px;left:-1000px;display:block;visibility:hidden;">
+	<div class="igdm_MenuScrollContainer igdm_MenuScrollContainerRootVertical" data-ig="x:1944750471.0:mkr:sd" style="position:relative;z-index:0;">
+		<a class="igdm_MenuScrollButton igdm_MenuScrollerTop" title="Scroll up" href="javascript:void(0)" tabindex="-1" data-ig="x:1944750471.1:mkr:sb" style="z-index:500;top:0px;left:0px;display:none;"><span class="igdm_MenuScrollIcon igdm_MenuScrollIconTop" data-ig="x:1944750471.2:mkr:si" unselectable="on"></span></a><ul class="igdm_MenuGroupVerticalRoot " style="position:relative;display:block;">
+			<li data-ig="x:1944750471.3:adr:0" class="igdm_MenuItemVerticalRoot" unselectable="on"><a accesskey="" href="javascript:RangeContextMenu_ItemClick();" tabindex="-1" class="igdm_MenuItemVerticalRootLink " onclick="{return false;}"><span tabindex="-1" unselectable="on">Today</span></a></li><li data-ig="x:1944750471.4:adr:1" class="igdm_MenuItemVerticalRoot" unselectable="on"><a href="javascript:RangeContextMenu_ItemClick();" tabindex="-1" class="igdm_MenuItemVerticalRootLink " onclick="{return false;}"><span tabindex="-1" unselectable="on">Yesterday</span></a></li><li data-ig="x:1944750471.5:adr:2" class="igdm_MenuItemVerticalRoot" unselectable="on"><a href="javascript:RangeContextMenu_ItemClick();" tabindex="-1" class="igdm_MenuItemVerticalRootLink " onclick="{return false;}"><span tabindex="-1" unselectable="on">This Week</span></a></li><li data-ig="x:1944750471.6:adr:3" class="igdm_MenuItemVerticalRoot" unselectable="on"><a href="javascript:RangeContextMenu_ItemClick();" tabindex="-1" class="igdm_MenuItemVerticalRootLink " onclick="{return false;}"><span tabindex="-1" unselectable="on">Last Week</span></a></li><li data-ig="x:1944750471.7:adr:4" class="igdm_MenuItemVerticalRoot" unselectable="on"><a href="javascript:RangeContextMenu_ItemClick();" tabindex="-1" class="igdm_MenuItemVerticalRootLink " onclick="{return false;}"><span tabindex="-1" unselectable="on">This Month</span></a></li><li data-ig="x:1944750471.8:adr:5" class="igdm_MenuItemVerticalRoot" unselectable="on"><a href="javascript:RangeContextMenu_ItemClick();" tabindex="-1" class="igdm_MenuItemVerticalRootLink " onclick="{return false;}"><span tabindex="-1" unselectable="on">Last Month</span></a></li>
+		</ul><a class="igdm_MenuScrollButton igdm_MenuScrollerBottom" title="Scroll down" href="javascript:void(0)" tabindex="-1" data-ig="x:1944750471.9:mkr:sb" style="z-index:500;left:0px;bottom:0px;display:none;"><span class="igdm_MenuScrollIcon igdm_MenuScrollIconBottom" data-ig="x:1944750471.10:mkr:si" unselectable="on"></span></a>
+	</div>
+</div>
+
+
+        <div id="loginWindow" class="modalDialogLight" >
+            <div>
+                <h2>Login</h2>
+                
+
+<div id="loginPane" class="loginPaneNew" style="padding:4px; width: 100%; "  onkeypress="setLogin(event)" role="dialog" aria-label="Login Dialog">
+    <span onclick="closeLoginWindow();" title="Close" role="button" aria-label="close button"
+        style="color:#666666; text-decoration:none; font-weight: bold; cursor: pointer; position:absolute; top: 2px; right:6px; font-size:10pt;">X</span>
+    <script type="text/javascript">
+        function setLoginFocus() {
+            var obj = $find('LoginForm1_txtLogonName');
+            //alert(obj);
+            if (obj != null) obj.focus(100);
+        }
+        function setLogin(e) {
+            var input = ig_getWebControlById('LoginForm1_btnLogon');
+              if (e.keyCode == 13 && input != null ) {
+                  input.setFocus();
+                  input.click();
+                  e.preventDefault();
+                  return;
+            }
+        }
+
+    </script>
+    <table width="100%" role="presentation"><tr><td>
+        <div style="width:110px; text-align:right; float:left; margin-bottom:2px;"><span style="color:red">*</span> Logon Name:</div>
+        <span style="padding-left:7px;">
+            <input type="hidden" id="LoginForm1_txtLogonName_clientState" name="LoginForm1_txtLogonName_clientState" /><input title="Logon Name field" id="LoginForm1_txtLogonName" onkeyup="SetBackGroundColor(this, &#39;White&#39;, &#39;Yellow&#39;);" aria-required="true" readonly="readonly" name="LoginForm1_txtLogonName" class="igte_Edit" type="text" style="background-color:Yellow;height:20px;width:150px;text-align:notset;" />
+			<span id="LoginForm1_RequiredFieldValidator1" style="color:Red;visibility:hidden;">Required!</span>
+        </span>
+    </td></tr>
+    <tr><td style="padding-top: 2px;">
+        <div style="width:110px; text-align:right;float:left; margin-bottom:2px;"><span style="color:red">*</span> Password:</div>
+        <span style="padding-left:7px;">
+            <input type="hidden" id="LoginForm1_txtPassword_clientState" name="LoginForm1_txtPassword_clientState" /><input title="Password field" id="LoginForm1_txtPassword" onkeyup="SetBackGroundColor(this, &#39;White&#39;, &#39;Yellow&#39;);" aria-required="true" readonly="readonly" name="LoginForm1_txtPassword" class="igte_Edit" type="password" style="background-color:Yellow;height:20px;width:150px;text-align:notset;" />
+			<span id="LoginForm1_RequiredFieldValidator2" style="color:Red;visibility:hidden;">Required!</span>
+        </span>
+    </td></tr>
+    <tr><td  >
+        <div style="width:322px; text-align:right;">
+            <div style="float:right; padding-left:5px; text-align:left;">
+				<fieldset aria-label="Login Type" style="border: 0px;">
+            <div style="min-height: 24px;"><input id="LoginForm1_rdoPubCpu" type="radio" name="ctl00$LoginForm1$logonType" value="rdoPubCpu" /><label for="LoginForm1_rdoPubCpu">This is a Public Computer</label></div>
+            <input id="LoginForm1_rdoPvtCpu" type="radio" name="ctl00$LoginForm1$logonType" value="rdoPvtCpu" /><label for="LoginForm1_rdoPvtCpu">This is a Private Computer</label>
+				</fieldset>
+            </div>
+        </div>
+    </td></tr>
+    <tr><td align="center">
+        
+    </td></tr>
+    <tr><td align="center"  >
+       
+<table role="presentation" cellspacing="0" cellpadding="0" id="LoginForm1_btnLogon__2" style="display:inline-table;width:120px;"><tr><td>
+	<table role="presentation" cellspacing="0" cellpadding="0" id="LoginForm1_btnLogon__1" style="table-layout:fixed;cursor:Default;width:120px;height:24px;border-style:Solid;border-width:1px;border-color:#F0F0F0 #707070 #707070 #F0F0F0;">
+		<tr><td nowrap="nowrap" id="LoginForm1_btnLogon__5" style="overflow:hidden;background-color:buttonface;padding:0px 1px 1px 0px;border-width:1px;border-style:Solid;border-color:White #A0A0A0 #A0A0A0 White;" align="Center" valign="Middle">
+			<span unselectable="on" id="LoginForm1_btnLogon__3" style="border:0px;background:none;font-family:Arial;font-size:10pt;"><u>L</u>ogon</span>
+			<input id="LoginForm1_btnLogon" type="submit" size="0" style="font-size:2px;padding:0px;z-index:-1;border:0px;background:transparent;outline:0px;width:1px;height:1px;" name="ctl00$LoginForm1$btnLogon" value="Logon" accesskey="L" />
+		</td></tr>
+	</table>
+</td></tr></table>
+        <div style="width:267px; text-align:right; height:10px;">
+         </div>
+    </td></tr>
+    <tr><td align="center">
+        
+    </td></tr>
+    <tr><td align="center">
+        
+    </td></tr></table>
+</div>
+
+
+
+
+                
+
+            </div> 
+            <script type="text/javascript">
+                function displayLoginWindow() {
+                    var obj = document.getElementById("loginWindow");
+                    obj.style.visibility = "visible";
+                    obj.style.opacity = 100;
+                    obj.style.pointerEvents = "all";
+                    setLoginFocus();
+                }
+                function closeLoginWindow() {
+                    var obj = document.getElementById("loginWindow");
+                	obj.style.opacity = 0;
+                    obj.style.visibility = "hidden";
+                    obj.style.pointerEvents = "none";
+                }
+
+            </script>
+            <br />
+        </div>
+    <input type="hidden" id="_ig_def_dp_cal_clientState" name="_ig_def_dp_cal_clientState" /><table id="_ig_def_dp_cal" class="igmc_Control" cellspacing="0" cellpadding="0" border="0" style="position:absolute;display:none;visibility:hidden;">
+	<tr>
+		<td colspan="7" class="igmc_Header" data-ig="x:1395466269.0:mkr:6"><input data-ig="x:1395466269.1:mkr:7" type="button" alt="" style="position:absolute;z-index:-1;outline:0;width:1px;height:1px;font-size:1px;padding:0px;border:0px;" /><table cellspacing="0" cellpadding="0" border="0" style="width:100%;height:100%;">
+			<tr>
+				<td data-ig="x:1395466269.2:mkr:0" class="igmc_NextPrev"><img src="../ig_res/Default/images/igmc_prev.gif" alt="Previous Month" /></td><td align="center" valign="middle" style="white-space:nowrap;width:100%;"><span class="igmc_MonthYear" data-ig="x:1395466269.3:mkr:2">April 2026</span></td><td data-ig="x:1395466269.4:mkr:1" class="igmc_NextPrev"><img src="../ig_res/Default/images/igmc_next.gif" alt="Next Month" /></td>
+			</tr>
+		</table></td>
+	</tr><tr>
+		<td class="igmc_DOW" scope="col" style="width:14.286%;">Sun</td><td class="igmc_DOW" scope="col" style="width:14.286%;">Mon</td><td class="igmc_DOW" scope="col" style="width:14.286%;">Tue</td><td class="igmc_DOW" scope="col" style="width:14.286%;">Wed</td><td class="igmc_DOW" scope="col" style="width:14.286%;">Thu</td><td class="igmc_DOW" scope="col" style="width:14.286%;">Fri</td><td class="igmc_DOW" scope="col" style="width:14.286%;">Sat</td>
+	</tr><tr data-ig="x:1395466269.5:mkr:5">
+		<td class="igmc_Day igmc_WeekendDay igmc_OtherMonthDay">29</td><td class="igmc_Day igmc_OtherMonthDay">30</td><td class="igmc_Day igmc_OtherMonthDay">31</td><td class="igmc_Day">1</td><td class="igmc_Day">2</td><td class="igmc_Day">3</td><td class="igmc_Day igmc_WeekendDay">4</td>
+	</tr><tr>
+		<td class="igmc_Day igmc_WeekendDay">5</td><td class="igmc_Day">6</td><td class="igmc_Day">7</td><td class="igmc_Day">8</td><td class="igmc_Day">9</td><td class="igmc_Day">10</td><td class="igmc_Day igmc_WeekendDay">11</td>
+	</tr><tr>
+		<td class="igmc_Day igmc_WeekendDay">12</td><td class="igmc_Day">13</td><td class="igmc_Day">14</td><td class="igmc_Day">15</td><td class="igmc_Day">16</td><td class="igmc_Day">17</td><td class="igmc_Day igmc_WeekendDay">18</td>
+	</tr><tr>
+		<td class="igmc_Day igmc_WeekendDay">19</td><td class="igmc_Day">20</td><td class="igmc_Day">21</td><td class="igmc_Day">22</td><td class="igmc_Day igmc_TodayDay">23</td><td class="igmc_Day">24</td><td class="igmc_Day igmc_WeekendDay">25</td>
+	</tr><tr>
+		<td class="igmc_Day igmc_WeekendDay">26</td><td class="igmc_Day">27</td><td class="igmc_Day">28</td><td class="igmc_Day">29</td><td class="igmc_Day">30</td><td class="igmc_Day igmc_OtherMonthDay">1</td><td class="igmc_Day igmc_WeekendDay igmc_OtherMonthDay">2</td>
+	</tr><tr>
+		<td class="igmc_Day igmc_WeekendDay igmc_OtherMonthDay">3</td><td class="igmc_Day igmc_OtherMonthDay">4</td><td class="igmc_Day igmc_OtherMonthDay">5</td><td class="igmc_Day igmc_OtherMonthDay">6</td><td class="igmc_Day igmc_OtherMonthDay">7</td><td class="igmc_Day igmc_OtherMonthDay">8</td><td class="igmc_Day igmc_WeekendDay igmc_OtherMonthDay">9</td>
+	</tr><tr>
+		<td colspan="7" data-ig="x:1395466269.6:mkr:4" class="igmc_Footer">Today: 4/23/2026</td>
+	</tr>
+</table><input type="hidden" name="ctl00$_IG_CSS_LINKS_" id="_IG_CSS_LINKS_" value="~/Style/style.css|~/Style/styleforsearch.css|~/favicon.ico|~/localization/styleFromCounty.css|../ig_res/Default/ig_monthcalendar.css|../ig_res/ElectricBlue/ig_texteditor.css|../ig_res/Default/ig_texteditor.css|../ig_res/Default/ig_datamenu.css|../ig_res/ElectricBlue/ig_dialogwindow.css|../ig_res/ElectricBlue/ig_datamenu.css|../ig_res/ElectricBlue/ig_shared.css|../ig_res/Default/ig_shared.css" />
+<script type="text/javascript">
+//<![CDATA[
+var Page_Validators =  new Array(document.getElementById("LoginForm1_RequiredFieldValidator1"), document.getElementById("LoginForm1_RequiredFieldValidator2"));
+//]]>
+</script>
+
+<script type="text/javascript">
+//<![CDATA[
+var LoginForm1_RequiredFieldValidator1 = document.all ? document.all["LoginForm1_RequiredFieldValidator1"] : document.getElementById("LoginForm1_RequiredFieldValidator1");
+LoginForm1_RequiredFieldValidator1.controltovalidate = "LoginForm1_txtLogonName";
+LoginForm1_RequiredFieldValidator1.errormessage = "Required!";
+LoginForm1_RequiredFieldValidator1.validationGroup = "logon";
+LoginForm1_RequiredFieldValidator1.evaluationfunction = "RequiredFieldValidatorEvaluateIsValid";
+LoginForm1_RequiredFieldValidator1.initialvalue = "";
+var LoginForm1_RequiredFieldValidator2 = document.all ? document.all["LoginForm1_RequiredFieldValidator2"] : document.getElementById("LoginForm1_RequiredFieldValidator2");
+LoginForm1_RequiredFieldValidator2.controltovalidate = "LoginForm1_txtPassword";
+LoginForm1_RequiredFieldValidator2.errormessage = "Required!";
+LoginForm1_RequiredFieldValidator2.validationGroup = "logon";
+LoginForm1_RequiredFieldValidator2.evaluationfunction = "RequiredFieldValidatorEvaluateIsValid";
+LoginForm1_RequiredFieldValidator2.initialvalue = "";
+//]]>
+</script>
+
+<script language='javascript'><!--
+					var _sessTOID = -1;
+					var _isLoggedOn = false;
+					function _mainSetSessTimeout(){
+					try{
+						window.clearTimeout(_sessTOID);
+					}
+					catch (e){}
+					try{
+						_sessTOID = window.setTimeout('displaySessionWarning();', 3475000);
+					}
+					catch (e){window.status = 'init timeout failed';}
+					}
+					_mainSetSessTimeout();
+					//-->
+					</script><script><!--
+				try{document.getElementById('cphNoMargin_f_txtParty').focus();}catch(e){}  // -->
+				</script>
+<script type="text/javascript">
+//<![CDATA[
+
+var Page_ValidationActive = false;
+if (typeof(ValidatorOnLoad) == "function") {
+    ValidatorOnLoad();
+}
+
+function ValidatorOnSubmit() {
+    if (Page_ValidationActive) {
+        return ValidatorCommonOnSubmit();
+    }
+    else {
+        return true;
+    }
+}
+        Sys.Application.add_init(function() {
+    $create(Infragistics.Web.UI.WebDataMenu, {"id":"Header1_WebDataMenu1","name":"WebDataMenu1","props":[[[,,,,,],{"c":{"mihIcon":"igdm_ElectricBlueMenuItemHorizontalIcon","miv":"igdm_ElectricBlueMenuItemVertical","mivSelected":"igdm_ElectricBlueMenuItemVerticalSelected","mivIcon":"igdm_ElectricBlueMenuItemVerticalIcon","mgv":"igdm_ElectricBlueMenuGroupVertical","mivRootSelected":"igdm_ElectricBlueMenuItemVerticalRootSelected","mivParent":"igdm_ElectricBlueMenuItemVerticalParent","ocs":1,"mivRootLink":"igdm_ElectricBlueMenuItemVerticalRootLink","mihRootActive":"igdm_ElectricBlueMenuItemHorizontalRootActive","vse":0,"mihRoot":"igdm_ElectricBlueMenuItemHorizontalRoot","mgh":"igdm_ElectricBlueMenuGroupHorizontal","mihRootDisabled":"igdm_ElectricBlueMenuItemHorizontalRootDisabled","cmonc":true,"mivRootActive":"igdm_ElectricBlueMenuItemVerticalRootActive","aoh":false,"mivParentLink":"igdm_ElectricBlueMenuItemVerticalParentLink","subMenuClosingDelay":0,"mivRoot":"igdm_ElectricBlueMenuItemVerticalRoot","enableScrolling":false,"enabled":true,"uid":"ctl00$Header1$WebDataMenu1","mihActive":"igdm_ElectricBlueMenuItemHorizontalActive","mihRootLink":"igdm_ElectricBlueMenuItemHorizontalRootLink","pi":"[]","tabIndex":"20","mhDisabled":"igdm_ElectricBlueControlHorizontalDisabled","mivRootDisabled":"igdm_ElectricBlueMenuItemVerticalRootDisabled","mihParentLink":"igdm_ElectricBlueMenuItemHorizontalParentLink","mivActive":"igdm_ElectricBlueMenuItemVerticalActive","subMenuOpeningDelay":0,"mihRootHover":"igdm_ElectricBlueMenuItemHorizontalRootHover","mvDisabled":"igdm_ElectricBlueControlVerticalDisabled","mghRoot":"igdm_ElectricBlueMenuGroupHorizontalRoot","_pi":"[\"../ig_res/Default/images/ig_ajaxIndicator.gif\",,,\"ig_AjaxIndicator\",,1,,,,\"ig_AjaxIndicatorBlock\",,3,,3,\"Async post\"]","selectedItemAdr":"12","mihHover":"igdm_ElectricBlueMenuItemHorizontalHover","mihRootSelected":"igdm_ElectricBlueMenuItemHorizontalRootSelected","mih":"igdm_ElectricBlueMenuItemHorizontal","mvActive":"igdm_ElectricBlueControlVerticalActive","mivRootHover":"igdm_ElectricBlueMenuItemVerticalRootHover","mivDisabled":"igdm_ElectricBlueMenuItemVerticalDisabled","mivLink":"igdm_ElectricBlueMenuItemVerticalLink","mihParent":"igdm_ElectricBlueMenuItemHorizontalParent","mgvRoot":"igdm_ElectricBlueMenuGroupVerticalRoot","mihDisabled":"igdm_ElectricBlueMenuItemHorizontalDisabled","mhActive":"igdm_ElectricBlueControlHorizontalActive","mihSelected":"igdm_ElectricBlueMenuItemHorizontalSelected","mivHover":"igdm_ElectricBlueMenuItemVerticalHover","mihLink":"igdm_ElectricBlueMenuItemHorizontalLink"}}],[[[[,,,,,,,,,,,,,,,,,,,,,,,,,"mainMenuItem",,,,,,,]],,]],[{'0':[[,,,,"Welcome","10","_welcome","~/","",,,,,]],'1':[[,,,,"",,,"","",,,,1,]],'2':[[,,,,"Birth","40","BIRTH","","",,,,,]],'2.0':[[,,,,"Search Birth Index","9998","BIRTHSEARCH_INDEX","~/Birth/SearchEntry.aspx","",,,,,]],'3':[[,,,,"",,,"","",,,,1,]],'4':[[,,,,"Death","130","DEATH","","",,,,,]],'4.0':[[,,,,"Search Death Index","9998","DEATHSEARCH_INDEX","~/DEATH/SearchEntry.aspx","",,,,,]],'5':[[,,,,"",,,"","",,,,1,]],'6':[[,,,,"DBA","140","OPRSEARCH_MAP_INDEX","~/RealEstate/Map/SearchEntry.aspx","",,,,,]],'7':[[,,,,"",,,"","",,,,1,]],'8':[[,,,,"Marriage","210","MARRIAGE","","",,,,,]],'8.0':[[,,,,"Online Marriage Application","9998","MARRIAGE43","~/Marriage/MarriageApplication.aspx","",,,,,]],'8.1':[[,,,,"Search Marriage Index","9998","MARRIAGESEARCH_INDEX","~/Marriage/SearchEntry.aspx","",,,,,]],'9':[[,,,,"",,,"","",,,,1,]],'10':[[327826,,,,"My Account","250","MYACCOUNT","","",,,,,]],'10.0':[[,,,,"Certified Copy Validation","9998","MYACCOUNTREQUEST","~/RealEstate/CertifiedCopy/SearchEntry.aspx","",,,,,]],'10.1':[[,,,,"Change Password","9998","MYACCOUNTCHANGE_PASSWORD","~/Users/PasswordChange.aspx","",,,,,]],'10.2':[[,,,,"Change Web Site Preferences","9998","MYACCOUNTWEB_CHANGE_PREFS","~/Users/UserPreferences.aspx","",,,,,]],'10.3':[[,,,,"Electorincally Submit OPR Documents for Recording ","9998","MYACCOUNTOPR_ESUBMIT","~/realestate/eSubmit.aspx","",,,,,]],'10.4':[[,,,,"ERequest History","9998","MYACCOUNTOPR_ESTATUS","~/realestate/eStatus.aspx","",,,,,]],'10.5':[[,,,,"My Account Statement","9998","MYACCOUNTACCOUNT_STATEMENT","~/Users/AccountSummary.aspx","",,,,,]],'10.6':[[,,,,"My Activity Summary","9998","MYACCOUNTMY_SESSION_HISTORY","~/Users/SessionHistory.aspx","",,,,,]],'10.7':[[,,,,"My Export Jobs","9998","MYACCOUNTWEB_EXPORT","~/Export/","",,,,,]],'10.8':[[,,,,"My Profile","9998","MYACCOUNTMY_PROFILE","~/Users/UserDetails.aspx","",,,,,]],'10.9':[[,,,,"My Request History","9998","MYACCOUNTMY_REQUEST_HISTORY","~/Users/RequestHistory.aspx","",,,,,]],'10.10':[[,,,,"My Shopping Basket","9998","MYACCOUNTMY_BASKET","~/Users/Basket.aspx","",,,,,]],'11':[[,,,,"",,,"","",,,,1,]],'12':[[327889,,,,"Official Public Records","270","OPR","","",,,,,]],'12.0':[[,,,,"Grantee List","9998","OPRGRANTEE_LIST","~/RealEstate/ListOfGrantees.aspx","",,,,,]],'12.1':[[,,,,"Grantor List","9998","OPRGRANTOR_LIST","~/RealEstate/ListOfGrantors.aspx","",,,,,]],'12.2':[[,,,,"Search Real Estate Index","9998","OPRSEARCH_INDEX","~/RealEstate/SearchEntry.aspx","",,,,,]],'13':[[,,,,"",,,"","",,,,1,]],'14':[[,,,,"FAQ","380","_faq","~/localization/faq.aspx","",,,,,]]},{'-1':[[,,,,,,,,,,,,,,,,,,0,,,,,,"-1"]],'0':[[,,,,,,,,,,,,,,,,,,,,,,,,"0"]],'1':[[,,,,,,,,,,,,,,,,,,,,,,,,"1"]],'2':[[,,,,,,,,,,,,,,,,,,,,,,,,"2"]],'2.0':[[,,,,,,,,,,,,,,,,,,,,,,,,"2.0"]],'3':[[,,,,,,,,,,,,,,,,,,,,,,,,"3"]],'4':[[,,,,,,,,,,,,,,,,,,,,,,,,"4"]],'4.0':[[,,,,,,,,,,,,,,,,,,,,,,,,"4.0"]],'5':[[,,,,,,,,,,,,,,,,,,,,,,,,"5"]],'6':[[,,,,,,,,,,,,,,,,,,,,,,,,"6"]],'7':[[,,,,,,,,,,,,,,,,,,,,,,,,"7"]],'8':[[,,,,,,,,,,,,,,,,,,,,,,,,"8"]],'8.0':[[,,,,,,,,,,,,,,,,,,,,,,,,"8.0"]],'8.1':[[,,,,,,,,,,,,,,,,,,,,,,,,"8.1"]],'9':[[,,,,,,,,,,,,,,,,,,,,,,,,"9"]],'10':[[,,,,,,,,,,,,,,,,,,,,,,,,"10"]],'10.0':[[,,,,,,,,,,,,,,,,,,,,,,,,"10.0"]],'10.1':[[,,,,,,,,,,,,,,,,,,,,,,,,"10.1"]],'10.2':[[,,,,,,,,,,,,,,,,,,,,,,,,"10.2"]],'10.3':[[,,,,,,,,,,,,,,,,,,,,,,,,"10.3"]],'10.4':[[,,,,,,,,,,,,,,,,,,,,,,,,"10.4"]],'10.5':[[,,,,,,,,,,,,,,,,,,,,,,,,"10.5"]],'10.6':[[,,,,,,,,,,,,,,,,,,,,,,,,"10.6"]],'10.7':[[,,,,,,,,,,,,,,,,,,,,,,,,"10.7"]],'10.8':[[,,,,,,,,,,,,,,,,,,,,,,,,"10.8"]],'10.9':[[,,,,,,,,,,,,,,,,,,,,,,,,"10.9"]],'10.10':[[,,,,,,,,,,,,,,,,,,,,,,,,"10.10"]],'11':[[,,,,,,,,,,,,,,,,,,,,,,,,"11"]],'12':[[,,,,,,,,,,,,,,,,,,,,,,,,"12"]],'12.0':[[,,,,,,,,,,,,,,,,,,,,,,,,"12.0"]],'12.1':[[,,,,,,,,,,,,,,,,,,,,,,,,"12.1"]],'12.2':[[,,,,,,,,,,,,,,,,,,,,,,,,"12.2"]],'13':[[,,,,,,,,,,,,,,,,,,,,,,,,"13"]],'14':[[,,,,,,,,,,,,,,,,,,,,,,,,"14"]]}],["Initialize:webmnu_accessibility"]]}, null, null, $get("Header1_WebDataMenu1"));
+});
+//]]>
+</script>
+<script type='text/javascript'>
+//<![CDATA[
+try{igbut_init("cphNoMargin_SearchButtons1_btnSearch",["1,1,1,2,,,,,1,1,,,","pd;0px 1px 1px 0px;bc;#F0F0F0 #707070 #707070 #F0F0F0;ibc;White #A0A0A0 #A0A0A0 White;bg;buttonface;clr;","","bg;Orange","pd;1px 0px 0px 1px;bc;#707070 #D0D0D0 #D0D0D0 #707070;ibc;#A0A0A0 #F0F0F0 #F0F0F0 #A0A0A0",""],["c","NewSearch_Click"]);}catch(e){status="Can not init button";}
+//]]>
+</script><script type='text/javascript'>
+//<![CDATA[
+try{igbut_init("cphNoMargin_SearchButtons1_btnClear",["1,1,1,2,,,,,1,1,,,","pd;0px 1px 1px 0px;bc;#F0F0F0 #707070 #707070 #F0F0F0;ibc;White #A0A0A0 #A0A0A0 White;bg;buttonface;clr;","","bg;Orange","pd;1px 0px 0px 1px;bc;#707070 #D0D0D0 #D0D0D0 #707070;ibc;#A0A0A0 #F0F0F0 #F0F0F0 #A0A0A0",""]);}catch(e){status="Can not init button";}
+//]]>
+</script>
+<script type="text/javascript">
+//<![CDATA[
+Sys.Application.add_init(function() {
+    $create(Infragistics.Web.UI.WebTextEditor, {"id":"cphNoMargin_f_txtParty","name":"cphNoMargin_f_txtParty","props":[[[],{"c":{"prop":"1,0,,0,1,1,,,3,1,,,,6,,200,,2038:2040:2032,igte_Focus,igte_Hover,igte_NullText,","nt":"Lastname Firstname","prop1":"","uid":"ctl00$cphNoMargin$f$txtParty"}}],,,[]]}, null, null, $get("cphNoMargin_f_txtParty"));
+});
+Sys.Application.add_init(function() {
+    $create(Infragistics.Web.UI.WebTextEditor, {"id":"cphNoMargin_f_txtGrantor","name":"cphNoMargin_f_txtGrantor","props":[[[],{"c":{"prop":"1,0,,0,1,1,,,3,1,,,,6,,200,,2038:2040:2032,igte_Focus,igte_Hover,igte_NullText,","nt":"Lastname Firstname","prop1":"","uid":"ctl00$cphNoMargin$f$txtGrantor"}}],,,[]]}, null, null, $get("cphNoMargin_f_txtGrantor"));
+});
+Sys.Application.add_init(function() {
+    $create(Infragistics.Web.UI.WebTextEditor, {"id":"cphNoMargin_f_txtGrantee","name":"cphNoMargin_f_txtGrantee","props":[[[],{"c":{"prop":"1,0,,0,1,1,,,3,1,,,,6,,200,,2038:2040:2032,igte_Focus,igte_Hover,igte_NullText,","nt":"Lastname Firstname","prop1":"","uid":"ctl00$cphNoMargin$f$txtGrantee"}}],,,[]]}, null, null, $get("cphNoMargin_f_txtGrantee"));
+});
+Sys.Application.add_init(function() {
+    $create(Infragistics.Web.UI.WebDatePicker, {"id":"cphNoMargin_f_ddcDateFiledFrom","name":"cphNoMargin_f_ddcDateFiledFrom","props":[[[],{"c":{"buts":"igte_ElectricBlueButtonHover,igte_ElectricBlueButtonPressed,igte_ElectricBlueButtonDisabled,igte_ElectricBlueButtonFocus,../ig_res/ElectricBlue/images/igte_customHover.gif,../ig_res/ElectricBlue/images/igte_customPress.gif,../ig_res/ElectricBlue/images/igte_customDisable.gif,","prop":"1,0,,0,1,1,,,1,,,,,6,,200,,2038:2040:2032,igte_ElectricBlueFocus,igte_ElectricBlueHover,igte_ElectricBlueNullText,igte_ElectricBlueInnerFocus,igte_ElectricBlueInnerHover","nt":"mm/dd/yyyy","prop1":"[\",,2026-3-23-8-40-15-948\",\"04/08/03\",\"_  0322\",\"04/08/03\",29,0,\"_ig_def_dp_cal\",\"\",\"500,3,300,3,0,200,3,100,3,0\"]","uid":"ctl00$cphNoMargin$f$ddcDateFiledFrom"}}],,,["Initialize:webdp_accessibility"]]}, null, null, $get("cphNoMargin_f_ddcDateFiledFrom"));
+});
+Sys.Application.add_init(function() {
+    $create(Infragistics.Web.UI.WebDatePicker, {"id":"cphNoMargin_f_ddcDateFiledTo","name":"cphNoMargin_f_ddcDateFiledTo","props":[[[],{"c":{"buts":"igte_ElectricBlueButtonHover,igte_ElectricBlueButtonPressed,igte_ElectricBlueButtonDisabled,igte_ElectricBlueButtonFocus,../ig_res/ElectricBlue/images/igte_customHover.gif,../ig_res/ElectricBlue/images/igte_customPress.gif,../ig_res/ElectricBlue/images/igte_customDisable.gif,","prop":"1,0,,0,1,1,,,1,,,,,6,,200,,2038:2040:2032,igte_ElectricBlueFocus,igte_ElectricBlueHover,igte_ElectricBlueNullText,igte_ElectricBlueInnerFocus,igte_ElectricBlueInnerHover","nt":"mm/dd/yyyy","prop1":"[\",,2026-3-23-8-40-15-948\",\"04/08/03\",\"_  0322\",\"04/08/03\",29,0,\"_ig_def_dp_cal\",\"\",\"500,3,300,3,0,200,3,100,3,0\"]","uid":"ctl00$cphNoMargin$f$ddcDateFiledTo"}}],,,["Initialize:webdp_accessibility"]]}, null, null, $get("cphNoMargin_f_ddcDateFiledTo"));
+});
+Sys.Application.add_init(function() {
+    $create(Infragistics.Web.UI.WebTextEditor, {"id":"cphNoMargin_f_txtInstrumentNoFrom","name":"cphNoMargin_f_txtInstrumentNoFrom","props":[[[],{"c":{"prop":"1,0,,0,1,1,,,3,1,,,,6,,200,,2038:2040:2032,igte_Focus,igte_Hover,igte_NullText,","prop1":"","uid":"ctl00$cphNoMargin$f$txtInstrumentNoFrom"}}],,,[]]}, null, null, $get("cphNoMargin_f_txtInstrumentNoFrom"));
+});
+Sys.Application.add_init(function() {
+    $create(Infragistics.Web.UI.WebTextEditor, {"id":"cphNoMargin_f_txtInstrumentNoTo","name":"cphNoMargin_f_txtInstrumentNoTo","props":[[[],{"c":{"prop":"1,0,,0,1,1,,,3,1,,,,6,,200,,2038:2040:2032,igte_Focus,igte_Hover,igte_NullText,","prop1":"","uid":"ctl00$cphNoMargin$f$txtInstrumentNoTo"}}],,,[]]}, null, null, $get("cphNoMargin_f_txtInstrumentNoTo"));
+});
+Sys.Application.add_init(function() {
+    $create(Infragistics.Web.UI.WebTextEditor, {"id":"cphNoMargin_f_txtBook","name":"cphNoMargin_f_txtBook","props":[[[],{"c":{"prop":"1,0,,0,1,1,,,3,1,,,,6,,200,,2038:2040:2032,igte_Focus,igte_Hover,igte_NullText,","prop1":"","uid":"ctl00$cphNoMargin$f$txtBook"}}],,,[]]}, null, null, $get("cphNoMargin_f_txtBook"));
+});
+Sys.Application.add_init(function() {
+    $create(Infragistics.Web.UI.WebTextEditor, {"id":"cphNoMargin_f_txtPage","name":"cphNoMargin_f_txtPage","props":[[[],{"c":{"prop":"1,0,,0,1,1,,,3,1,,,,6,,200,,2038:2040:2032,igte_Focus,igte_Hover,igte_NullText,","prop1":"","uid":"ctl00$cphNoMargin$f$txtPage"}}],,,[]]}, null, null, $get("cphNoMargin_f_txtPage"));
+});
+Sys.Application.add_init(function() {
+    $create(Infragistics.Web.UI.WebTextEditor, {"id":"cphNoMargin_f_DataTextEdit1","name":"cphNoMargin_f_DataTextEdit1","props":[[[],{"c":{"prop":"1,0,,0,1,1,,,3,1,,,,6,,200,,2038:2040:2032,igte_Focus,igte_Hover,igte_NullText,","prop1":"","uid":"ctl00$cphNoMargin$f$DataTextEdit1"}}],,,[]]}, null, null, $get("cphNoMargin_f_DataTextEdit1"));
+});
+Sys.Application.add_init(function() {
+    $create(Infragistics.Web.UI.WebTextEditor, {"id":"cphNoMargin_f_txtLDLot","name":"cphNoMargin_f_txtLDLot","props":[[[],{"c":{"prop":"1,0,,0,1,1,,,3,1,,,,6,,200,,2038:2040:2032,igte_Focus,igte_Hover,igte_NullText,","prop1":"","uid":"ctl00$cphNoMargin$f$txtLDLot"}}],,,[]]}, null, null, $get("cphNoMargin_f_txtLDLot"));
+});
+Sys.Application.add_init(function() {
+    $create(Infragistics.Web.UI.WebTextEditor, {"id":"cphNoMargin_f_txtLDBook","name":"cphNoMargin_f_txtLDBook","props":[[[],{"c":{"prop":"1,0,,0,1,1,,,3,1,,,,6,,200,,2038:2040:2032,igte_Focus,igte_Hover,igte_NullText,","prop1":"","uid":"ctl00$cphNoMargin$f$txtLDBook"}}],,,[]]}, null, null, $get("cphNoMargin_f_txtLDBook"));
+});
+Sys.Application.add_init(function() {
+    $create(Infragistics.Web.UI.WebTextEditor, {"id":"cphNoMargin_f_txtLDSection","name":"cphNoMargin_f_txtLDSection","props":[[[],{"c":{"prop":"1,0,,0,1,1,,,3,1,,,,6,,200,,2038:2040:2032,igte_Focus,igte_Hover,igte_NullText,","prop1":"","uid":"ctl00$cphNoMargin$f$txtLDSection"}}],,,[]]}, null, null, $get("cphNoMargin_f_txtLDSection"));
+});
+Sys.Application.add_init(function() {
+    $create(Infragistics.Web.UI.WebTextEditor, {"id":"cphNoMargin_f_txtLDStreetAddress","name":"cphNoMargin_f_txtLDStreetAddress","props":[[[],{"c":{"prop":"1,0,,0,1,1,,,3,1,,,,6,,200,,2038:2040:2032,igte_Focus,igte_Hover,igte_NullText,","prop1":"","uid":"ctl00$cphNoMargin$f$txtLDStreetAddress"}}],,,[]]}, null, null, $get("cphNoMargin_f_txtLDStreetAddress"));
+});
+Sys.Application.add_init(function() {
+    $create(Infragistics.Web.UI.WebTextEditor, {"id":"cphNoMargin_f_txtLDFreeForm","name":"cphNoMargin_f_txtLDFreeForm","props":[[[],{"c":{"prop":"1,0,,0,1,1,,,3,1,,,,6,,200,,2038:2040:2032,igte_Focus,igte_Hover,igte_NullText,","prop1":"","uid":"ctl00$cphNoMargin$f$txtLDFreeForm"}}],,,[]]}, null, null, $get("cphNoMargin_f_txtLDFreeForm"));
+});
+Sys.Application.add_init(function() {
+    $create(Infragistics.Web.UI.WebTextEditor, {"id":"cphNoMargin_f_txtLDVolume","name":"cphNoMargin_f_txtLDVolume","props":[[[],{"c":{"prop":"1,0,,0,1,1,,,3,1,,,,6,,200,,2038:2040:2032,igte_Focus,igte_Hover,igte_NullText,","prop1":"","uid":"ctl00$cphNoMargin$f$txtLDVolume"}}],,,[]]}, null, null, $get("cphNoMargin_f_txtLDVolume"));
+});
+Sys.Application.add_init(function() {
+    $create(Infragistics.Web.UI.WebTextEditor, {"id":"cphNoMargin_f_txtLDPage","name":"cphNoMargin_f_txtLDPage","props":[[[],{"c":{"prop":"1,0,,0,1,1,,,3,1,,,,6,,200,,2038:2040:2032,igte_Focus,igte_Hover,igte_NullText,","prop1":"","uid":"ctl00$cphNoMargin$f$txtLDPage"}}],,,[]]}, null, null, $get("cphNoMargin_f_txtLDPage"));
+});
+Sys.Application.add_init(function() {
+    $create(Infragistics.Web.UI.WebTextEditor, {"id":"cphNoMargin_f_txtLDMapcase","name":"cphNoMargin_f_txtLDMapcase","props":[[[],{"c":{"prop":"1,0,,0,1,1,,,3,1,,,,6,,200,,2038:2040:2032,igte_Focus,igte_Hover,igte_NullText,","prop1":"","uid":"ctl00$cphNoMargin$f$txtLDMapcase"}}],,,[]]}, null, null, $get("cphNoMargin_f_txtLDMapcase"));
+});
+Sys.Application.add_init(function() {
+    $create(Infragistics.Web.UI.WebTextEditor, {"id":"cphNoMargin_f_txtLDSlide","name":"cphNoMargin_f_txtLDSlide","props":[[[],{"c":{"prop":"1,0,,0,1,1,,,3,1,,,,6,,200,,2038:2040:2032,igte_Focus,igte_Hover,igte_NullText,","prop1":"","uid":"ctl00$cphNoMargin$f$txtLDSlide"}}],,,[]]}, null, null, $get("cphNoMargin_f_txtLDSlide"));
+});
+//]]>
+</script>
+<script type='text/javascript'>
+//<![CDATA[
+try{igbut_init("cphNoMargin_SearchButtons2_btnSearch",["1,1,1,2,,,,,1,1,,,","pd;0px 1px 1px 0px;bc;#F0F0F0 #707070 #707070 #F0F0F0;ibc;White #A0A0A0 #A0A0A0 White;bg;buttonface;clr;","","bg;Orange","pd;1px 0px 0px 1px;bc;#707070 #D0D0D0 #D0D0D0 #707070;ibc;#A0A0A0 #F0F0F0 #F0F0F0 #A0A0A0",""],["c","NewSearch_Click"]);}catch(e){status="Can not init button";}
+//]]>
+</script><script type='text/javascript'>
+//<![CDATA[
+try{igbut_init("cphNoMargin_SearchButtons2_btnClear",["1,1,1,2,,,,,1,1,,,","pd;0px 1px 1px 0px;bc;#F0F0F0 #707070 #707070 #F0F0F0;ibc;White #A0A0A0 #A0A0A0 White;bg;buttonface;clr;","","bg;Orange","pd;1px 0px 0px 1px;bc;#707070 #D0D0D0 #D0D0D0 #707070;ibc;#A0A0A0 #F0F0F0 #F0F0F0 #A0A0A0",""]);}catch(e){status="Can not init button";}
+//]]>
+</script>
+<script type="text/javascript">
+//<![CDATA[
+Sys.Application.add_init(function() {
+    $create(Infragistics.Web.UI.WebDialogWindow, {"id":"cphNoMargin_dlgPopup","name":"dlgPopup","props":[[[,3,,,,,1,1,0,0,,0],{"c":{"uid":"ctl00$cphNoMargin$dlgPopup","mbc":"igdw_ElectricBlueModalBackground"}}],[[[[,"Document Type List",,]],[[[[],{"c":{"h":"../ig_res/ElectricBlue/images/igdw_CloseHover.gif","i":"../ig_res/ElectricBlue/images/igdw_Close.gif","s":"i","a":"Close","p":"../ig_res/ElectricBlue/images/igdw_CloseMouseDown.gif"}}],,],[[[]],,],[[[]],,]],],[[[,,,,]],,]],,["WindowStateChanged:dlgPopup_WindowStateChanged","Initialize:dlgInit"]]}, null, null, $get("cphNoMargin_dlgPopup"));
+});
+Sys.Application.add_init(function() {
+    $create(Infragistics.Web.UI.WebDialogWindow, {"id":"dlgOptionWindow","name":"dlgOptionWindow","props":[[[,3,,,"700px","550px",1,1,0,0,,0],{"c":{"uid":"ctl00$dlgOptionWindow","mbc":"igdw_ElectricBlueModalBackground"}}],[[[[,"Copy Options",,]],[[[[],{"c":{"h":"../ig_res/ElectricBlue/images/igdw_CloseHover.gif","i":"../ig_res/ElectricBlue/images/igdw_Close.gif","s":"i","a":"Close","p":"../ig_res/ElectricBlue/images/igdw_CloseMouseDown.gif"}}],,],[[[]],,],[[[]],,]],],[[[,,,,]],,]],,["WindowStateChanged:dlgOptionWindow_WindowStateChanged","Initialize:dlgInit"]]}, null, null, $get("dlgOptionWindow"));
+});
+Sys.Application.add_init(function() {
+    $create(Infragistics.Web.UI.WebDataMenu, {"id":"RangeContextMenu","name":"RangeContextMenu","props":[[[,,,,1,],{"c":{"mihIcon":"igdm_MenuItemHorizontalIcon","miv":"igdm_MenuItemVertical","mivSelected":"igdm_MenuItemVerticalSelected","mivIcon":"igdm_MenuItemVerticalIcon","mgv":"igdm_MenuGroupVertical","mivRootSelected":"igdm_MenuItemVerticalRootSelected","mivParent":"igdm_MenuItemVerticalParent","ocs":1,"mivRootLink":"igdm_MenuItemVerticalRootLink","mihRootActive":"igdm_MenuItemHorizontalRootActive","mihRoot":"igdm_MenuItemHorizontalRoot","mgh":"igdm_MenuGroupHorizontal","mihRootDisabled":"igdm_MenuItemHorizontalRootDisabled","cmonc":true,"mivRootActive":"igdm_MenuItemVerticalRootActive","aoh":true,"mivParentLink":"igdm_MenuItemVerticalParentLink","subMenuClosingDelay":0,"mivRoot":"igdm_MenuItemVerticalRoot","enableScrolling":true,"enabled":true,"uid":"ctl00$RangeContextMenu","mihActive":"igdm_MenuItemHorizontalActive","mihRootLink":"igdm_MenuItemHorizontalRootLink","pi":"[]","tabIndex":"0","mhDisabled":"igdm_ControlHorizontalDisabled","mivRootDisabled":"igdm_MenuItemVerticalRootDisabled","mihParentLink":"igdm_MenuItemHorizontalParentLink","mivActive":"igdm_MenuItemVerticalActive","subMenuOpeningDelay":0,"mihRootHover":"igdm_MenuItemHorizontalRootHover","mvDisabled":"igdm_ControlVerticalDisabled","mghRoot":"igdm_MenuGroupHorizontalRoot","mihHover":"igdm_MenuItemHorizontalHover","mihRootSelected":"igdm_MenuItemHorizontalRootSelected","mih":"igdm_MenuItemHorizontal","mvActive":"igdm_ControlVerticalActive","mivRootHover":"igdm_MenuItemVerticalRootHover","mivDisabled":"igdm_MenuItemVerticalDisabled","mivLink":"igdm_MenuItemVerticalLink","mihParent":"igdm_MenuItemHorizontalParent","mgvRoot":"igdm_MenuGroupVerticalRoot","mihDisabled":"igdm_MenuItemHorizontalDisabled","mhActive":"igdm_ControlHorizontalActive","mihSelected":"igdm_MenuItemHorizontalSelected","mivHover":"igdm_MenuItemVerticalHover","mihLink":"igdm_MenuItemHorizontalLink"}}],[[[[,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,]],,]],[{'0':[[,,,,"Today",,"TODAY","javascript:RangeContextMenu_ItemClick();","",,,,,]],'1':[[,,,,"Yesterday",,"YESTERDAY","javascript:RangeContextMenu_ItemClick();","",,,,,]],'2':[[,,,,"This Week",,"THISWEEK","javascript:RangeContextMenu_ItemClick();","",,,,,]],'3':[[,,,,"Last Week",,"LASTWEEK","javascript:RangeContextMenu_ItemClick();","",,,,,]],'4':[[,,,,"This Month",,"THISMONTH","javascript:RangeContextMenu_ItemClick();","",,,,,]],'5':[[,,,,"Last Month",,"LASTMONTH","javascript:RangeContextMenu_ItemClick();","",,,,,]]},{'-1':[[,,,,,,,,,,,,,,,,,,,,,,,,"-1"]],'0':[[,,,,,,,,,,,,,,,,,,,,,,,,"0"]],'1':[[,,,,,,,,,,,,,,,,,,,,,,,,"1"]],'2':[[,,,,,,,,,,,,,,,,,,,,,,,,"2"]],'3':[[,,,,,,,,,,,,,,,,,,,,,,,,"3"]],'4':[[,,,,,,,,,,,,,,,,,,,,,,,,"4"]],'5':[[,,,,,,,,,,,,,,,,,,,,,,,,"5"]]}],[]]}, null, null, $get("RangeContextMenu"));
+});
+Sys.Application.add_init(function() {
+    $create(Infragistics.Web.UI.WebTextEditor, {"id":"LoginForm1_txtLogonName","name":"LoginForm1_txtLogonName","props":[[[],{"c":{"prop":"1,64,,0,1,1,,,3,1,,,,6,,200,,2038:2040:2032,igte_Focus,igte_Hover,igte_NullText,","prop1":"","uid":"ctl00$LoginForm1$txtLogonName"}}],,,[]]}, null, null, $get("LoginForm1_txtLogonName"));
+});
+
+document.getElementById('LoginForm1_RequiredFieldValidator1').dispose = function() {
+    Array.remove(Page_Validators, document.getElementById('LoginForm1_RequiredFieldValidator1'));
+}
+Sys.Application.add_init(function() {
+    $create(Infragistics.Web.UI.WebTextEditor, {"id":"LoginForm1_txtPassword","name":"LoginForm1_txtPassword","props":[[[],{"c":{"prop":"1,64,,0,1,1,,,3,1,,,,6,,200,,2038:2040:2032,igte_Focus,igte_Hover,igte_NullText,","prop1":"","uid":"ctl00$LoginForm1$txtPassword"}}],,,[]]}, null, null, $get("LoginForm1_txtPassword"));
+});
+
+document.getElementById('LoginForm1_RequiredFieldValidator2').dispose = function() {
+    Array.remove(Page_Validators, document.getElementById('LoginForm1_RequiredFieldValidator2'));
+}
+//]]>
+</script>
+<script type='text/javascript'>
+//<![CDATA[
+try{igbut_init("LoginForm1_btnLogon",["1,1,1,2,,,,,1,1,,logon,","pd;0px 1px 1px 0px;bc;#F0F0F0 #707070 #707070 #F0F0F0;ibc;White #A0A0A0 #A0A0A0 White;bg;buttonface;clr;","","bg;Orange","pd;1px 0px 0px 1px;bc;#707070 #D0D0D0 #D0D0D0 #707070;ibc;#A0A0A0 #F0F0F0 #F0F0F0 #A0A0A0",""]);}catch(e){status="Can not init button";}
+//]]>
+</script>
+<script type="text/javascript">
+//<![CDATA[
+Sys.Application.add_init(function() {
+    $create(Infragistics.Web.UI.WebMonthCalendar, {"id":"_ig_def_dp_cal","name":"_ig_def_dp_cal","props":[[[],{"c":{"tday":"24=Today: 4/25/2026=Today: 4/23/2026=Today: {0:d}","prop":"15,3,7,2,0,0,0,0,1,1,1,2038,2040,2039,2037,2036,,,0,6,igmc_Day,igmc_WeekendDay,igmc_OtherMonthDay,igmc_TodayDay,igmc_SelectedDay,igmc_WeekNumber,igmc_HoverDay,igmc_FocusDay,igmc_DisabledDay,igmc_HoverNextPrev,igmc_PressedNextPrev,igmc_HoverMonthYear,igmc_PressedMonthYear,igmc_HoverFooter,igmc_PressedFooter,igmc_List,igmc_Item,igmc_HoverItem,igmc_SelectedItem,","str":"January,February,March,April,May,June,July,August,September,October,November,December,","dates":"2026,4,1500,1,1,2500,12,31,0","img":"../ig_res/Default/images/igmc_prevHover.gif,../ig_res/Default/images/igmc_prevPress.gif,../ig_res/Default/images/igmc_nextHover.gif,../ig_res/Default/images/igmc_nextPress.gif","anim":"500,3,300,3,0,200,3,100,3,0","vse":0,"uid":"ctl00$_ig_def_dp_cal","tdyDateTimeFormat":{"AMDesignator":"AM","Calendar":{"MinSupportedDateTime":"\/Date(-62135575200000)\/","MaxSupportedDateTime":"\/Date(253402300799999)\/","AlgorithmType":1,"CalendarType":1,"Eras":[1],"TwoDigitYearMax":2029,"IsReadOnly":true},"DateSeparator":"/","FirstDayOfWeek":0,"CalendarWeekRule":0,"FullDateTimePattern":"dddd, MMMM d, yyyy h:mm:ss tt","LongDatePattern":"dddd, MMMM d, yyyy","LongTimePattern":"h:mm:ss tt","MonthDayPattern":"MMMM d","PMDesignator":"PM","RFC1123Pattern":"ddd, dd MMM yyyy HH\u0027:\u0027mm\u0027:\u0027ss \u0027GMT\u0027","ShortDatePattern":"M/d/yyyy","ShortTimePattern":"h:mm tt","SortableDateTimePattern":"yyyy\u0027-\u0027MM\u0027-\u0027dd\u0027T\u0027HH\u0027:\u0027mm\u0027:\u0027ss","TimeSeparator":":","UniversalSortableDateTimePattern":"yyyy\u0027-\u0027MM\u0027-\u0027dd HH\u0027:\u0027mm\u0027:\u0027ss\u0027Z\u0027","YearMonthPattern":"MMMM yyyy","AbbreviatedDayNames":["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],"ShortestDayNames":["Su","Mo","Tu","We","Th","Fr","Sa"],"DayNames":["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"],"AbbreviatedMonthNames":["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec",""],"MonthNames":["January","February","March","April","May","June","July","August","September","October","November","December",""],"IsReadOnly":true,"NativeCalendarName":"Gregorian Calendar","AbbreviatedMonthGenitiveNames":["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec",""],"MonthGenitiveNames":["January","February","March","April","May","June","July","August","September","October","November","December",""]},"myp":"## %"}}],,,[]]}, null, null, $get("_ig_def_dp_cal"));
+});
+//]]>
+</script>
+</form>  
+    </div>
+  
+
+    <div id="searchNotice" class="modalDialog">
+        <div>
+            <h2>Searching for records...</h2>
+            <div style="width:100%; text-align:center;"><img id="_progInd" src="../images/progressIndTrans.gif" alt="Progress Indicator" /></div>
+            <br />
+            To cancel, click 'Cancel', or press the 'Escape(ESC)' key.
+           <p style="text-align: right;">  <a href="#close" id="endSearch" class="btn-modal" onclick="clearSearchIndicator(event);">Cancel</a></p>
+
+        </div>
+        <script type="text/javascript">
+            /*if (window.addEventListener) {
+                window.addEventListener('stop', clearSearchIndicator, false);
+            }
+            else if (window.attachEvent) {
+                window.attachEvent('onstop', clearSearchIndicator);
+            }
+            document.onstop = clearSearchIndicator;*/
+
+            function checkForEsc(event) {
+                var key;
+                if (window.event) {
+                    key = window.event.keyCode;
+                }
+                else {
+                    key = event.which;
+                }
+                if (key == 27) {
+                    clearSearchIndicator();
+                }
+            }
+            function displaySearchIndicator() {
+            	var obj = document.getElementById("searchNotice");
+            	obj.style.visibility = "visible";
+                obj.style.opacity = 100;
+                obj.style.pointerEvents = "all";
+                if (window.addEventListener) {
+                    window.addEventListener('keyup', checkForEsc, false);
+                }
+                else if (window.attachEvent) {
+                    window.attachEvent('onkeyup', checkForEsc);
+                }
+
+            }
+            function clearSearchIndicator(e) {
+                var obj = document.getElementById("searchNotice");
+                obj.style.opacity = 0;
+                obj.style.visibility = "hidden";
+                obj.style.pointerEvents = "none";
+                stopWindow();
+                if (window.removeEventListener) {
+                    window.removeEventListener('keyup', checkForEsc, false);
+                }
+                else if (window.detachEvent) {
+                    window.detachEvent('onkeyup', checkForEsc);
+                }
+            }
+            function stopWindow() {
+                if (window.stop) {
+                    window.stop();
+                }
+                else {
+                    try { document.execCommand("Stop"); } catch (e) { };
+                    var e = document.createEvent("KeyboardEvent"); 
+                    e.initKeyboardEvent("keydown", true, true, window, "27", 0, "", false, "");
+                    document.dispatchEvent(e); 
+                }
+            }
+            function NewSearch_Click(oButton, oEvent) {
+                window.setTimeout("displaySearchIndicator();", 450);
+                var o = document.getElementById("_progInd");
+                window.setTimeout("document.getElementById('_progInd').src='" + o.src + "';", 200);
+                try { return Search_Click(oButton, oEvent); }
+                catch (e) { }
+            }
+        </script>
+    </div>
+
+    <div id="openModal" class="modalDialog">
+        <div>
+            <h2>Session Timeout Warning</h2>
+            <p >Your session will end in approximately one minute unless you click "Keep Working" to continue.<br />Or you may click "End Session" if you are done.</p>
+           <p style="text-align: right;">  <a href="#close" id="EndSession" class="btn-modal" onclick="closeSession();"> End Session</a>
+           &nbsp;&nbsp;&nbsp;<a href="#close" id="KeepWorking" class="btn-modal" onclick="clearSessionWarning();"> Keep Working</a>   </p>
+        </div>
+            <iframe id="ifrKeepAlive" tabindex="-1" src="javascript:'<html lang=&quot;en&quot; />'" allowtransparency="true" style="height:0px; width:0px;" frameborder="0" title="session keep-alive helper" ></iframe>
+
+        <script type="text/javascript">
+            try{
+                //window.setTimeout("displaySessionWarning();", 3478200);
+            }
+            catch (e){{document.write('<!-- init timeout failed-->');}}
+            var dialogTO;
+            function displaySessionWarning() {
+                dialogTO = window.setTimeout("closeSession();", 59000);
+                var obj = document.getElementById("openModal");
+                obj.style.visibility = "visible";
+                obj.style.opacity = 100;
+                obj.style.pointerEvents = "all";
+                if (_imgWindow == null){
+                    //alert('no img');
+                }
+                else {
+                    _imgWindow.displaySessionWarning();
+                }
+            }
+            function clearSessionWarning() {
+                _mainSetSessTimeout();
+                window.clearTimeout(dialogTO);
+                var obj = document.getElementById("openModal");
+            	obj.style.opacity = 0;
+                obj.style.visibility = "hidden";
+                obj.style.pointerEvents = "none";
+                var obj = document.getElementById("ifrKeepAlive");
+                obj.src = "/users/default.aspx?m=act&rnd=" + Math.random().toString();
+            }
+            function closeSession(){
+                _mainSetSessTimeout();
+                window.clearTimeout(dialogTO);
+                try{closePopup();}catch(e){}
+                if (_isLoggedOn){
+                    document.location.href="/logout.aspx";
+                }
+                else {
+                    document.location.href="/?session+timeout+2";
+                }
+            }
+        </script>
+    </div>
+
+
+</body>
+</html>
+

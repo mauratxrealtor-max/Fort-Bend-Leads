@@ -952,35 +952,73 @@ class ClerkScraper:
     # ── HTML table parser ─────────────────────────────────────────────────────
     def _parse_table(self, html: str, code: str, label: str,
                      exact_type: bool) -> list[dict]:
+        """
+        Parse Fort Bend results. The portal returns results on the SAME
+        SearchEntry.aspx page in an Infragistics WebDataGrid.
+
+        The grid rows are <tr> elements inside a table whose id contains
+        'gridResults' or similar. Column data is in <td> cells. The column
+        headers come from <th> or the first <tr>.
+
+        We try multiple strategies:
+        1. Find any table with date-like content and instrument numbers
+        2. Look for Infragistics grid by id patterns
+        3. Parse all tables and find the one with the most data rows
+        """
         soup  = BeautifulSoup(html, "lxml")
         today = datetime.now()
         recs  = []
 
+        # Strategy 1: find tables by Infragistics grid id patterns
+        # The grid id typically contains 'grid' or 'grd' or 'results'
         target = None
+
+        # Look for tables with ids matching grid patterns
         for tbl in soup.find_all("table"):
-            cells = tbl.find_all(["th", "td"])
-            if len(cells) < 4:
-                continue
-            txt = " ".join(c.get_text(strip=True).lower() for c in cells[:25])
-            if any(kw in txt for kw in
-                   ["grantor", "grantee", "instrument", "filed", "recorded"]):
-                target = tbl
-                break
+            tid = (tbl.get("id") or "").lower()
+            if any(kw in tid for kw in ["grid", "grd", "result", "search"]):
+                rows = tbl.find_all("tr")
+                if len(rows) > 1:
+                    target = tbl
+                    log.info("  Found grid table by id: %s rows=%d", tid, len(rows))
+                    break
+
+        # Strategy 2: find largest table with date-like content
         if not target:
+            best_tbl, best_score = None, 0
+            for tbl in soup.find_all("table"):
+                rows = tbl.find_all("tr")
+                if len(rows) < 2:
+                    continue
+                # Score by number of rows with date-like content
+                score = 0
+                for tr in rows[:20]:
+                    txt = tr.get_text(" ")
+                    if re.search(r"\d{2}/\d{2}/\d{4}", txt):
+                        score += 1
+                if score > best_score:
+                    best_score = score
+                    best_tbl = tbl
+            if best_score > 0:
+                target = best_tbl
+                log.info("  Found table by date content, score=%d", best_score)
+
+        if not target:
+            log.info("  No results table found in HTML (len=%d)", len(html))
             return recs
 
-        hrow = target.find("tr")
-        if not hrow:
-            return recs
-
+        # Detect columns from first row
+        all_rows = target.find_all("tr")
+        hrow = all_rows[0]
         col_map = {}
+
         for i, cell in enumerate(hrow.find_all(["th", "td"])):
             h = cell.get_text(strip=True).lower()
-            if re.search(r"inst(rument)?\s*(num|#|no|number)", h):
+            if re.search(r"inst(rument)?\s*(num|#|no|number)|ref", h):
                 col_map.setdefault("doc_num", i)
-            elif re.search(r"(instrument|doc(ument)?)\s*type|type", h):
+            elif re.search(r"(instrument|doc(ument)?|action)\s*type|type|module", h):
                 col_map.setdefault("doc_type", i)
-            elif re.search(r"(file|record)(ed)?\s*date|date", h):
+            elif re.search(r"(file|record|action|added)\s*(date|time)|date", h):
                 col_map.setdefault("filed", i)
             elif re.search(r"grantor|party\s*1|seller|owner", h):
                 col_map.setdefault("owner", i)
@@ -988,49 +1026,67 @@ class ClerkScraper:
                 col_map.setdefault("grantee", i)
             elif re.search(r"legal|desc(ription)?|abstract", h):
                 col_map.setdefault("legal", i)
-            elif re.search(r"amount|consider|price|value", h):
+            elif re.search(r"amount|consider|price|value|fee", h):
                 col_map.setdefault("amount", i)
 
+        # If no headers matched, use positional defaults
+        # Fort Bend Infragistics grid column order from ViewState:
+        # 0=session#, 1=batch#, 2=date_added, 3=module_id(doc_type),
+        # 4=action_type(doc_type), 5=dest, 6=img, 7=img, 8=img,
+        # 9=INSTRUMENT_NUMBER, 10=DOC_DESCRIPTION
         if not col_map:
-            col_map = {"doc_num": 0, "doc_type": 1, "filed": 2,
-                       "owner": 3, "grantee": 4, "legal": 5, "amount": 6}
+            col_map = {"doc_num": 9, "doc_type": 4, "filed": 2,
+                       "owner": 10, "grantee": 11}
 
-        for tr in target.find_all("tr")[1:]:
+        data_rows = all_rows[1:]
+        log.info("  Parsing %d data rows, col_map=%s", len(data_rows), col_map)
+
+        for tr in data_rows:
             try:
                 cells = tr.find_all(["td", "th"])
                 if len(cells) < 2:
                     continue
                 texts = [c.get_text(" ", strip=True) for c in cells]
+                if not any(t.strip() for t in texts):
+                    continue
 
                 def _get(key, default=""):
                     idx = col_map.get(key)
                     return texts[idx].strip() \
                         if idx is not None and idx < len(texts) else default
 
-                doc_num      = _get("doc_num") or (texts[0] if texts else "")
+                doc_num      = _get("doc_num") or texts[0]
                 raw_doc_type = _get("doc_type")
                 raw_date     = _get("filed")
                 raw_owner    = _get("owner")
 
-                if not doc_num.strip() or re.match(
-                        r"^(instrument\s*#?|doc\s*#?|num|no\.?)$",
-                        doc_num.strip(), re.I):
+                # Skip header-like rows
+                if re.match(r"^(instrument|doc|ref|session|batch|#|no\.?)$",
+                            doc_num.strip(), re.I):
+                    continue
+                if not doc_num.strip():
                     continue
 
+                # Parse date — look in ALL cells if needed
                 filed_str = ""
-                for fmt in ("%m/%d/%Y", "%Y-%m-%d", "%m-%d-%Y"):
-                    try:
-                        filed_str = datetime.strptime(
-                            raw_date.strip(), fmt).strftime("%Y-%m-%d")
+                date_candidates = [raw_date] + texts
+                for raw in date_candidates:
+                    for fmt in ("%m/%d/%Y", "%Y-%m-%d", "%m-%d-%Y",
+                                "%m/%d/%Y %I:%M %p", "%m/%d/%Y %H:%M"):
+                        try:
+                            dt_part = raw.strip().split()[0] if raw.strip() else ""
+                            filed_str = datetime.strptime(dt_part, fmt.split()[0]).strftime("%Y-%m-%d")
+                            break
+                        except Exception:
+                            pass
+                    if filed_str:
                         break
-                    except Exception:
-                        pass
+
                 if not filed_str:
                     continue
 
                 try:
-                    if (today - datetime.strptime(
-                            filed_str, "%Y-%m-%d")).days > LOOK_BACK_DAYS + 1:
+                    if (today - datetime.strptime(filed_str, "%Y-%m-%d")).days > LOOK_BACK_DAYS + 1:
                         continue
                 except Exception:
                     continue
@@ -1040,14 +1096,16 @@ class ClerkScraper:
                 else:
                     rec_code, rec_label = classify_doc_type(raw_doc_type or label)
 
-                doc_idx = col_map.get("doc_num", 0)
+                # Build clerk URL from any link in the row
                 link = ""
-                if doc_idx < len(cells):
-                    a = cells[doc_idx].find("a")
-                    if a and a.get("href"):
+                for cell in cells:
+                    a = cell.find("a", href=True)
+                    if a:
                         href = a["href"]
-                        link = (href if href.startswith("http")
-                                else BASE_URL + "/" + href.lstrip("/"))
+                        if "SearchDetail" in href or "Document" in href or "View" in href:
+                            link = href if href.startswith("http") \
+                                else BASE_URL + "/" + href.lstrip("/")
+                            break
 
                 rec = {
                     "doc_num":      doc_num.strip(),
@@ -1076,8 +1134,8 @@ class ClerkScraper:
                 recs.append(rec)
             except Exception as e:
                 log.debug("Row error: %s", e)
-        return recs
 
+        return recs
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  OUTPUT

@@ -790,9 +790,8 @@ class ClerkScraper:
         html = await page.content()
         log.info("  Broad search result URL: %s", page.url)
         log.info("  Broad result snippet: %s",
-                 html[html.lower().find('<body'):html.lower().find('<body')+500]
-                 .replace('
-',' ') if '<body' in html.lower() else html[:400])
+                 (html[html.lower().find('<body'):html.lower().find('<body')+500]
+                 .replace('\n',' ').replace('\r','')) if '<body' in html.lower() else html[:400])
         all_recs = await self._paginate(page, "OTHER", "All Types", False)
         matched = [r for r in all_recs if r["cat"] != "OTHER"]
         log.info("  Broad: %d total rows → %d matched target types",

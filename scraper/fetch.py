@@ -208,8 +208,13 @@ class ParcelDB:
                     if name.lower().endswith(".dbf"):
                         self._parse_dbf_bytes(data)
                         if self._by_owner: return True
-                    if name.lower().endswith(".csv"):
+                    elif name.lower().endswith(".csv"):
                         self._parse_csv_bytes(data)
+                        if self._by_owner: return True
+                    elif (name.lower().endswith(".txt") and
+                          any(kw in name.lower() for kw in
+                              ["owner", "property", "entity", "parcel"])):
+                        self._parse_txt_bytes(data, name)
                         if self._by_owner: return True
             except Exception as e:
                 log.warning("ZIP: %s", e)
@@ -267,6 +272,46 @@ class ParcelDB:
                 self._ingest_row(row)
         except Exception as e:
             log.warning("CSV: %s", e)
+
+    def _parse_txt_bytes(self, data: bytes, filename: str = ""):
+        """Parse Orion/FBCAD pipe-delimited or tab-delimited TXT export files."""
+        try:
+            text = data.decode("latin-1", errors="replace")
+            lines = text.splitlines()
+            if not lines:
+                return
+            # Detect delimiter
+            first = lines[0]
+            delim = "|" if first.count("|") > first.count("	") else "	"
+            reader = csv.DictReader(io.StringIO(text), delimiter=delim)
+            count = 0
+            for row in reader:
+                self._ingest_row(row)
+                count += 1
+            log.info("  TXT parsed %d rows from %s", count, filename)
+        except Exception as e:
+            log.warning("TXT parse %s: %s", filename, e)
+
+    def _parse_orion_txt(self, data: bytes):
+        """Parse Orion appraisal export TXT files (pipe or tab delimited)."""
+        try:
+            text = data.decode("latin-1", errors="replace")
+            lines = text.splitlines()
+            if not lines:
+                return
+            # Detect delimiter
+            delim = '|' if lines[0].count('|') > lines[0].count('\t') else '\t'
+            headers = [h.strip().upper() for h in lines[0].split(delim)]
+            log.info("  Orion TXT headers: %s", headers[:15])
+            for line in lines[1:]:
+                if not line.strip():
+                    continue
+                parts = line.split(delim)
+                row = {headers[i]: parts[i].strip()
+                       for i in range(min(len(headers), len(parts)))}
+                self._ingest_row(row)
+        except Exception as e:
+            log.warning("Orion TXT parse: %s", e)
 
     def _ingest_row(self, row: dict):
         r = {k.upper().strip(): str(v).strip() for k, v in row.items()}
@@ -504,26 +549,49 @@ class ClerkScraper:
                     "grantor", "party name", "searchentry",
                     "file date", "recorded date"])
 
-    # ── Discover dropdown ─────────────────────────────────────────────────────
+    # ── Discover form fields ─────────────────────────────────────────────────
     async def _get_dropdown_options(self, page) -> dict[str, str]:
-        for sel_pat in [
-            "select[name*='InstrumentType']", "select[name*='DocType']",
-            "select[name*='Type']",            "select[id*='Instrument']",
-            "select[id*='Doc']",
-        ]:
-            sel = page.locator(sel_pat)
-            if await sel.count() > 0:
-                opts = await sel.first.evaluate("""el => Array.from(el.options).map(o => ({
-                    text: o.text.trim(), value: o.value.trim()
-                }))""")
-                result = {}
-                for o in opts:
-                    t = o["text"].upper()
-                    if t and t not in ("", "-- SELECT --", "SELECT TYPE",
-                                       "ALL TYPES", "ALL", "SELECT"):
-                        result[t] = o["value"] or o["text"]
-                return result
-        return {}
+        """
+        Dump the entire search form structure so we know exactly what fields exist.
+        The Fort Bend portal uses a text search form — not a doc-type dropdown.
+        We log all selects/inputs/radios so we can see the real field names.
+        """
+        import json as _json
+        form_info = await page.evaluate("""() => {
+            const r = {selects: [], inputs: [], radios: []};
+            document.querySelectorAll('select').forEach(s => {
+                r.selects.push({name: s.name, id: s.id,
+                    options: Array.from(s.options).map(o => o.text.trim()+'=>'+o.value)});
+            });
+            document.querySelectorAll('input[type=text],input[type=date],input:not([type])').forEach(i => {
+                r.inputs.push({name: i.name, id: i.id,
+                               placeholder: i.placeholder, value: i.value});
+            });
+            document.querySelectorAll('input[type=radio]').forEach(rb => {
+                r.radios.push({name: rb.name, id: rb.id, value: rb.value,
+                    label: rb.labels&&rb.labels[0]?rb.labels[0].textContent.trim():''});
+            });
+            return r;
+        }""")
+        log.info("  FORM selects: %s", _json.dumps(form_info.get('selects',[]), separators=(',',':')))
+        log.info("  FORM inputs:  %s", _json.dumps(form_info.get('inputs',[]),  separators=(',',':')))
+        log.info("  FORM radios:  %s", _json.dumps(form_info.get('radios',[]),  separators=(',',':')))
+
+        # Only return real instrument-type options (>4 items, excluding match-type words)
+        skip = {"BEGINS WITH","CONTAINS","EXACT MATCH","SOUNDS LIKE",
+                "-- SELECT --","SELECT TYPE","ALL TYPES","ALL","SELECT",""}
+        result = {}
+        for s in form_info.get('selects', []):
+            opts = {}
+            for o in s.get('options', []):
+                parts = o.split('=>', 1)
+                txt = parts[0].strip().upper()
+                val = parts[1] if len(parts) > 1 else parts[0]
+                if txt not in skip:
+                    opts[txt] = val
+            if len(opts) > 4:
+                result.update(opts)
+        return result
 
     # ── Per-type search ───────────────────────────────────────────────────────
     async def _search_one(self, page, code: str, label: str,
@@ -533,7 +601,6 @@ class ClerkScraper:
         await asyncio.sleep(0.5)
 
         html = await page.content()
-        # Re-establish if session expired
         if ("must be logged" in html.lower() or
                 "session" in html.lower() and "expired" in html.lower()):
             await self._establish_session(page)
@@ -541,11 +608,50 @@ class ClerkScraper:
                             wait_until="domcontentloaded")
             await asyncio.sleep(0.5)
 
+        # Dump raw HTML once (for LP only) so we can see exact form fields
+        if code == "LP":
+            html_dump = await page.content()
+            # Extract just the form portion to keep log manageable
+            import re as _re
+            form_match = _re.search(r'<form[^>]*>.*?</form>', html_dump,
+                                     _re.S | _re.I)
+            snippet = form_match.group(0)[:3000] if form_match else html_dump[:3000]
+            log.info("  RAW FORM HTML: %s", snippet.replace('\n',' ').replace('\r',''))
+
+        # Click the "Document Type" search category radio button if it exists
+        await self._select_search_category(page, "document type")
+
         await self._fill_dates(page, date_from, date_to)
         type_set = await self._fill_doc_type(page, code, label, dropdown_opts)
         await self._submit(page)
         await asyncio.sleep(1)
         return await self._paginate(page, code, label, type_set)
+
+    async def _select_search_category(self, page, category_keyword: str):
+        """Click a radio button or tab matching the search category."""
+        kw = category_keyword.lower()
+        # Try radio buttons first
+        radios = page.locator("input[type='radio']")
+        count = await radios.count()
+        for i in range(count):
+            r = radios.nth(i)
+            label_text = await page.evaluate("""(el) => {
+                if (el.labels && el.labels[0]) return el.labels[0].textContent.trim().toLowerCase();
+                const id = el.id;
+                if (id) {
+                    const lbl = document.querySelector('label[for="'+id+'"]');
+                    if (lbl) return lbl.textContent.trim().toLowerCase();
+                }
+                return el.value.toLowerCase();
+            }""", await r.element_handle())
+            if kw in label_text:
+                try:
+                    await r.check()
+                    await asyncio.sleep(0.3)
+                    log.debug("  Selected radio: %s", label_text)
+                    return
+                except Exception:
+                    pass
 
     async def _fill_dates(self, page, date_from: str, date_to: str):
         pairs = [
@@ -569,33 +675,60 @@ class ClerkScraper:
 
     async def _fill_doc_type(self, page, code: str, label: str,
                               dropdown_opts: dict) -> bool:
-        candidates = DOC_TYPE_KEYWORDS.get(code, []) + [label.upper()]
-        for sel_pat in [
-            "select[name*='InstrumentType']", "select[name*='DocType']",
-            "select[name*='Type']",            "select[id*='Instrument']",
-        ]:
+        """
+        The Fort Bend portal search form has a text field for the search value.
+        We type the document type keyword into it and set match type to CONTAINS.
+        """
+        # Set match type to CONTAINS so partial doc-type keywords work
+        for sel_pat in ["select[name*='Match']", "select[id*='Match']",
+                        "select[name*='SearchType']", "select[id*='SearchType']",
+                        "select"]:
             sel = page.locator(sel_pat)
-            if await sel.count() == 0:
-                continue
-            for opt_text, opt_val in dropdown_opts.items():
-                for cand in candidates:
-                    if cand.upper() in opt_text or opt_text in cand.upper():
-                        try:
-                            await sel.first.select_option(value=opt_val)
-                            return True
-                        except Exception:
-                            pass
-            # Partial word fallback
-            for word in label.upper().split():
-                if len(word) < 4:
+            if await sel.count() > 0:
+                try:
+                    await sel.first.select_option(label="CONTAINS")
+                    break
+                except Exception:
+                    try:
+                        await sel.first.select_option(index=1)  # usually CONTAINS
+                        break
+                    except Exception:
+                        pass
+
+        # Try to find a Document Type specific input or a generic search field
+        # Fort Bend form fields: DocType, InstrumentType, SearchValue, txtSearch etc.
+        search_term = DOC_TYPE_KEYWORDS.get(code, [label])[0]
+
+        for inp_pat in [
+            "input[name*='DocType']", "input[id*='DocType']",
+            "input[name*='InstrumentType']", "input[id*='InstrumentType']",
+            "input[name*='SearchValue']", "input[id*='SearchValue']",
+            "input[name*='txtSearch']", "input[id*='txtSearch']",
+            "input[name*='SearchText']",
+        ]:
+            inp = page.locator(inp_pat)
+            if await inp.count() > 0:
+                await inp.first.triple_click()
+                await inp.first.fill(search_term)
+                log.debug("  Filled search field '%s' = '%s'", inp_pat, search_term)
+                return True
+
+        # If dropdown exists with instrument types, use it
+        if dropdown_opts:
+            candidates = DOC_TYPE_KEYWORDS.get(code, []) + [label.upper()]
+            for sel_pat in ["select[name*='InstrumentType']", "select[name*='DocType']",
+                            "select[name*='Type']"]:
+                sel = page.locator(sel_pat)
+                if await sel.count() == 0:
                     continue
                 for opt_text, opt_val in dropdown_opts.items():
-                    if word in opt_text:
-                        try:
-                            await sel.first.select_option(value=opt_val)
-                            return True
-                        except Exception:
-                            pass
+                    for cand in candidates:
+                        if cand.upper() in opt_text or opt_text in cand.upper():
+                            try:
+                                await sel.first.select_option(value=opt_val)
+                                return True
+                            except Exception:
+                                pass
         return False
 
     async def _submit(self, page):
@@ -647,13 +780,24 @@ class ClerkScraper:
 
     # ── Broad date search fallback ────────────────────────────────────────────
     async def _broad_search(self, page, date_from: str, date_to: str) -> list[dict]:
+        """Search only by date range, collect everything, post-filter by doc type."""
         await page.goto(SEARCH_URL, timeout=20_000, wait_until="domcontentloaded")
         await asyncio.sleep(0.5)
         await self._fill_dates(page, date_from, date_to)
         await self._submit(page)
         await asyncio.sleep(1)
+        # Log what we got back
+        html = await page.content()
+        log.info("  Broad search result URL: %s", page.url)
+        log.info("  Broad result snippet: %s",
+                 html[html.lower().find('<body'):html.lower().find('<body')+500]
+                 .replace('
+',' ') if '<body' in html.lower() else html[:400])
         all_recs = await self._paginate(page, "OTHER", "All Types", False)
-        return [r for r in all_recs if r["cat"] != "OTHER"]
+        matched = [r for r in all_recs if r["cat"] != "OTHER"]
+        log.info("  Broad: %d total rows → %d matched target types",
+                 len(all_recs), len(matched))
+        return matched
 
     # ── HTML table parser ─────────────────────────────────────────────────────
     def _parse_table(self, html: str, code: str, label: str,

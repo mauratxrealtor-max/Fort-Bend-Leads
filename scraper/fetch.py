@@ -625,6 +625,17 @@ class ClerkScraper:
         type_set = await self._fill_doc_type(page, code, label, dropdown_opts)
         await self._submit(page)
         await asyncio.sleep(1)
+
+        # Log results page info for first search only
+        if code == "LP":
+            result_html = await page.content()
+            log.info("  Results URL: %s", page.url)
+            log.info("  Results snippet: %s",
+                     result_html[result_html.lower().find('<body'):
+                                 result_html.lower().find('<body')+800
+                                 ].replace('\n',' ')[:600]
+                     if '<body' in result_html.lower() else result_html[:400])
+
         return await self._paginate(page, code, label, type_set)
 
     async def _select_search_category(self, page, category_keyword: str):
@@ -735,27 +746,31 @@ class ClerkScraper:
         return False
 
     async def _submit(self, page):
-        for pat in [
-            "input[value='Search']", "input[value='SEARCH']",
-            "input[value='Search Records']",
-            "input[id*='Search'][type='submit']",
-            "button:has-text('Search')",
-            "input[type='submit']",
-        ]:
-            btn = page.locator(pat)
-            if await btn.count() > 0:
-                await btn.first.click()
-                try:
-                    await page.wait_for_load_state("domcontentloaded",
-                                                    timeout=20_000)
-                except PWTimeout:
-                    pass
-                return
-        # JS fallback
-        await page.evaluate(
-            "document.querySelector('input[type=\"submit\"]')?.click()"
-        )
-        await asyncio.sleep(2)
+        """
+        Fort Bend form: onsubmit="javascript:return WebForm_OnSubmit();"
+        Must call WebForm_OnSubmit() then form.submit() via JS — button click
+        alone doesn't trigger the full ASP.NET postback navigation.
+        """
+        result = await page.evaluate("""() => {
+            try {
+                if (typeof WebForm_OnSubmit === 'function') {
+                    const ok = WebForm_OnSubmit();
+                    if (!ok) return 'webform_blocked';
+                }
+                const form = document.getElementById('form1') ||
+                             document.querySelector('form[action*="SearchEntry"]') ||
+                             document.querySelector('form');
+                if (form) { form.submit(); return 'form_submitted'; }
+                return 'no_form_found';
+            } catch(e) { return 'error:' + e.message; }
+        }""")
+        log.info("  Submit result: %s", result)
+        try:
+            await page.wait_for_load_state("domcontentloaded", timeout=20_000)
+        except PWTimeout:
+            pass
+        await asyncio.sleep(0.5)
+        log.info("  Post-submit URL: %s", page.url)
 
     async def _paginate(self, page, code: str, label: str,
                          exact: bool) -> list[dict]:

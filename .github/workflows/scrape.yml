@@ -2,8 +2,8 @@ name: Scrape & Deploy
 
 on:
   schedule:
-    - cron: "0 7 * * *"   # 7 AM UTC = 2 AM CDT / 1 AM CST
-  workflow_dispatch:        # manual trigger from Actions tab
+    - cron: "0 7 * * *"
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -16,13 +16,11 @@ jobs:
     timeout-minutes: 30
 
     steps:
-      # ── Checkout ────────────────────────────────────────────────────────────
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # ── Python setup ────────────────────────────────────────────────────────
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
@@ -30,18 +28,31 @@ jobs:
           cache: pip
           cache-dependency-path: scraper/requirements.txt
 
-      # ── Dependencies ─────────────────────────────────────────────────────────
       - name: Install Python dependencies
         run: pip install requests beautifulsoup4 lxml dbfread playwright
 
       - name: Install Playwright browsers
         run: python -m playwright install --with-deps chromium
 
-      # ── Run scraper ──────────────────────────────────────────────────────────
-      - name: Run scraper
+      - name: Run scraper (with full log output)
         run: python scraper/fetch.py
+        # Show all output even if it fails
+        continue-on-error: false
 
-      # ── Commit updated JSON files ─────────────────────────────────────────
+      - name: Show records.json summary
+        run: |
+          echo "=== dashboard/records.json ==="
+          python -c "
+          import json
+          with open('dashboard/records.json') as f:
+              d = json.load(f)
+          print(f'Total: {d[\"total\"]}')
+          print(f'With address: {d[\"with_address\"]}')
+          print(f'Fetched at: {d[\"fetched_at\"]}')
+          if d['records']:
+              print('First record:', json.dumps(d['records'][0], indent=2))
+          "
+
       - name: Commit records
         run: |
           git config user.name  "github-actions[bot]"
@@ -50,7 +61,6 @@ jobs:
           git diff --cached --quiet || git commit -m "chore: update records $(date -u +'%Y-%m-%d %H:%M UTC')"
           git push
 
-      # ── Deploy dashboard to GitHub Pages ─────────────────────────────────
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:

@@ -480,7 +480,7 @@ class ClerkScraper:
 
         # Build the POST payload with all required ASP.NET fields
         payload = {
-            "__EVENTTARGET": "ctl00$cphNoMargin$f$btnSearch",
+            "__EVENTTARGET": "ctl00$cphNoMargin$SearchButtons1$btnSearch",
             "__EVENTARGUMENT": "",
             "__VIEWSTATE": vs.get("__VIEWSTATE", ""),
             "__VIEWSTATEGENERATOR": vs.get("__VIEWSTATEGENERATOR", ""),

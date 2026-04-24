@@ -1327,7 +1327,7 @@ class ClerkScraper:
                 parcel = self.parcel_db.lookup(raw_owner)
                 if parcel:
                     rec.update({k: v for k, v in parcel.items() if v})
-                rec["flags"], rec["score"] = score_record(rec)
+                rec["flags"], _sc = score_record(rec); rec["score"] = int(_sc)
                 recs.append(rec)
             except Exception as e:
                 log.debug("Row error: %s", e)
@@ -1435,7 +1435,7 @@ async def main():
         "Done — Total=%d  WithAddress=%d  HotLeads(>=70)=%d",
         output["total"],
         output["with_address"],
-        sum(1 for r in records if r.get("score", 0) >= 70),
+        sum(1 for r in records if int(r.get("score", 0) or 0) >= 70),
     )
 
 

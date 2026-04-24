@@ -402,114 +402,170 @@ class ClerkScraper:
             )
             page = await ctx.new_page()
 
-            # Step 1: establish Playwright session (sets cookies)
+            # Establish session
             ok = await self._establish_session(page)
             if not ok:
                 log.error("Could not establish session")
                 await browser.close()
                 return
 
-            # Step 2: fill form and intercept the actual POST body
-            cookies = await ctx.cookies()
-            cookie_dict = {c["name"]: c["value"] for c in cookies}
-            html = await page.content()
-
-            # Intercept the real POST to capture exact field names
-            real_post_body = {}
-            async def handle_request(request):
-                if request.method == "POST" and "SearchEntry" in request.url:
+            # Search each doc type using full Playwright (dates typed natively)
+            found_any = False
+            for code, (label, _) in DOC_TYPES.items():
+                for attempt in range(RETRY_LIMIT):
                     try:
-                        body = request.post_data
-                        if body:
-                            from urllib.parse import parse_qs
-                            parsed = parse_qs(body, keep_blank_values=True)
-                            real_post_body.update({k: v[0] for k,v in parsed.items()})
-                            log.info("  Intercepted POST body keys: %s", list(parsed.keys()))
+                        recs = await self._playwright_search(
+                            page, code, label, date_from, date_to
+                        )
+                        if recs:
+                            found_any = True
+                        self.records.extend(recs)
+                        log.info("  [%s] %s: %d", code, label, len(recs))
+                        break
+                    except PWTimeout:
+                        log.warning("  Timeout [%s] attempt %d", code, attempt+1)
+                        await asyncio.sleep(3)
+                        await self._establish_session(page)
                     except Exception as e:
-                        log.warning("  POST intercept error: %s", e)
+                        log.warning("  Error [%s]: %s", code, e)
+                        break
 
-            page.on("request", lambda r: asyncio.ensure_future(handle_request(r)))
-
-            # Fill form and submit via Playwright to get real field names
-            await page.goto(SEARCH_URL, timeout=20_000, wait_until="domcontentloaded")
-            await asyncio.sleep(0.5)
-
-            # Fill dates using JS
-            await page.evaluate(f"""() => {{
-                const inputs = Array.from(document.querySelectorAll('input'));
-                const dateInputs = inputs.filter(i => i.value === 'mm/dd/yyyy');
-                if (dateInputs.length >= 2) {{
-                    dateInputs[0].value = '04/17/2026';
-                    dateInputs[0].dispatchEvent(new Event('change', {{bubbles:true}}));
-                    dateInputs[1].value = '04/24/2026';
-                    dateInputs[1].dispatchEvent(new Event('change', {{bubbles:true}}));
-                }}
-            }}""")
-            await asyncio.sleep(0.5)
-
-            # Submit via form.submit() to trigger POST interception
-            await page.evaluate("""() => {
-                document.getElementById('__EVENTTARGET').value =
-                    'ctl00$cphNoMargin$SearchButtons1$btnSearch';
-                document.getElementById('__EVENTARGUMENT').value = '0';
-                document.forms[0].submit();
-            }""")
-            try:
-                await page.wait_for_load_state("domcontentloaded", timeout=10_000)
-            except Exception:
-                pass
-            await asyncio.sleep(1)
-
-            if real_post_body:
-                log.info("  REAL POST FIELDS: %s", list(real_post_body.keys()))
-                # Save to file for inspection
-                import json as _json
-                dump_path = Path(__file__).parent.parent / "data" / "post_fields.json"
-                dump_path.parent.mkdir(parents=True, exist_ok=True)
-                dump_path.write_text(_json.dumps(real_post_body, indent=2))
-                log.info("  POST fields saved to data/post_fields.json")
-            else:
-                log.warning("  No POST body intercepted")
+            # Broad fallback: date only, no doc type filter
+            if not found_any:
+                log.info("Per-type got 0 — trying broad date search...")
+                recs = await self._playwright_search(
+                    page, None, None, date_from, date_to
+                )
+                self.records.extend(recs)
+                log.info("Broad: %d records", len(recs))
 
             await browser.close()
-
-        # Step 3: use requests (with the session cookies) to POST the search form
-        # This bypasses the ASP.NET JS postback problem entirely
-        log.info("Cookies obtained: %s", list(cookie_dict.keys()))
-        sess = requests.Session()
-        sess.headers["User-Agent"] = (
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-            "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
-        )
-        sess.headers["Referer"] = SEARCH_URL
-        for name, value in cookie_dict.items():
-            sess.cookies.set(name, value, domain="ccweb.co.fort-bend.tx.us")
-
-        # Extract ASP.NET hidden fields from the page HTML
-        vs = self._extract_viewstate(html)
-        log.info("ViewState length: %d chars", len(vs.get("__VIEWSTATE", "")))
-
-        found_any = False
-        for code, (label, _) in DOC_TYPES.items():
-            for attempt in range(RETRY_LIMIT):
-                try:
-                    recs = self._http_search(sess, vs, code, label, date_from, date_to)
-                    if recs:
-                        found_any = True
-                    self.records.extend(recs)
-                    log.info("  [%s] %s: %d", code, label, len(recs))
-                    break
-                except Exception as e:
-                    log.warning("  Error [%s] attempt %d: %s", code, attempt+1, e)
-                    time.sleep(2)
-
-        if not found_any:
-            log.info("Per-type got 0 — trying broad date search...")
-            recs = self._http_search(sess, vs, None, None, date_from, date_to)
-            self.records.extend(recs)
-            log.info("Broad: %d records", len(recs))
-
         log.info("Scraper done — %d total raw records", len(self.records))
+
+    async def _playwright_search(self, page, code, label, date_from, date_to):
+        """
+        Fully Playwright-native search. Lets the Infragistics JS handle
+        date serialization natively by typing into the date inputs directly.
+        Uses __doPostBack to submit, then reads results from the same page.
+        """
+        await page.goto(SEARCH_URL, timeout=20_000, wait_until="domcontentloaded")
+        await asyncio.sleep(0.8)
+
+        # Check session still valid
+        html = await page.content()
+        if "session" in html.lower() and "expired" in html.lower():
+            await self._establish_session(page)
+            await page.goto(SEARCH_URL, timeout=20_000, wait_until="domcontentloaded")
+            await asyncio.sleep(0.8)
+
+        # ── Fill date fields ──────────────────────────────────────────────────
+        # The Infragistics date pickers are identified by their associated
+        # hidden input clientState names: ddcDateFiledFrom and ddcDateFiledTo
+        # We click the visible date input and type the date directly.
+        date_filled = await page.evaluate(f"""() => {{
+            // Find all inputs that currently show mm/dd/yyyy or are date-type
+            const all = Array.from(document.querySelectorAll('input'));
+            const dateInputs = all.filter(i =>
+                (i.value === 'mm/dd/yyyy' || i.type === 'date') &&
+                i.offsetParent !== null  // visible
+            );
+            if (dateInputs.length >= 2) {{
+                // Clear and set value, then fire all needed events
+                function setDate(el, val) {{
+                    el.value = val;
+                    ['focus','input','change','blur','keyup'].forEach(evt =>
+                        el.dispatchEvent(new Event(evt, {{bubbles:true}})));
+                    // Also try Infragistics setter if available
+                    try {{
+                        const igCtrl = $find(el.id);
+                        if (igCtrl && igCtrl.set_value) {{
+                            const parts = val.split('/');
+                            igCtrl.set_value(new Date(
+                                parseInt(parts[2]),
+                                parseInt(parts[0])-1,
+                                parseInt(parts[1])
+                            ));
+                        }}
+                    }} catch(e) {{}}
+                }}
+                setDate(dateInputs[0], '{date_from}');
+                setDate(dateInputs[1], '{date_to}');
+                return 'set ' + dateInputs[0].id + ' and ' + dateInputs[1].id;
+            }}
+            // Fallback: try by name pattern
+            const from = document.querySelector('[id*="DateFiled"][id*="From"],[name*="DateFiled"][name*="From"]');
+            const to   = document.querySelector('[id*="DateFiled"][id*="To"],[name*="DateFiled"][name*="To"]');
+            if (from && to) {{
+                from.value = '{date_from}';
+                from.dispatchEvent(new Event('change', {{bubbles:true}}));
+                to.value = '{date_to}';
+                to.dispatchEvent(new Event('change', {{bubbles:true}}));
+                return 'set by name pattern';
+            }}
+            return 'no date fields found';
+        }}""")
+        log.info("  Date fill: %s", date_filled)
+
+        # ── Fill doc type ─────────────────────────────────────────────────────
+        if code:
+            search_term = DOC_TYPE_KEYWORDS.get(code, [label])[0] if label else ""
+            await page.evaluate(f"""() => {{
+                const el = document.getElementById('cphNoMargin_f_DataTextEdit1') ||
+                           document.querySelector('[name="cphNoMargin_f_DataTextEdit1"]');
+                if (el) {{
+                    el.value = '{search_term}';
+                    el.dispatchEvent(new Event('change', {{bubbles:true}}));
+                }}
+                const sel = document.querySelector('[id*="ddlSearchType"],[name*="ddlSearchType"]');
+                if (sel) sel.value = 'CONTAINS';
+            }}""")
+
+        # ── Submit via __doPostBack ────────────────────────────────────────────
+        await page.evaluate("""() => {
+            document.getElementById('__EVENTTARGET').value =
+                'ctl00$cphNoMargin$SearchButtons1$btnSearch';
+            document.getElementById('__EVENTARGUMENT').value = '0';
+            if (typeof WebForm_OnSubmit === 'function') WebForm_OnSubmit();
+            document.forms[0].submit();
+        }""")
+
+        try:
+            await page.wait_for_load_state("domcontentloaded", timeout=20_000)
+        except PWTimeout:
+            pass
+        await asyncio.sleep(1)
+
+        log.info("  After submit URL: %s  len=%d",
+                 page.url, len(await page.content()))
+
+        # ── Collect paginated results ─────────────────────────────────────────
+        all_recs = []
+        page_num = 1
+        while True:
+            html = await page.content()
+            recs = self._parse_table(html, code or "OTHER", label or "All", bool(code))
+            all_recs.extend(recs)
+            if not recs and page_num > 1:
+                break
+
+            # Look for Next page
+            next_btn = page.locator(
+                "a:has-text('Next'), a:has-text('>>'), "
+                "input[value='Next >'], a[id*='Next']"
+            )
+            if await next_btn.count() == 0:
+                break
+            await next_btn.first.click()
+            try:
+                await page.wait_for_load_state("domcontentloaded", timeout=15_000)
+            except Exception:
+                break
+            await asyncio.sleep(0.5)
+            page_num += 1
+            if page_num > 30:
+                break
+
+        return all_recs
 
     @staticmethod
     def _extract_viewstate(html: str) -> dict:

@@ -458,51 +458,79 @@ class ClerkScraper:
             await page.goto(SEARCH_URL, timeout=20_000, wait_until="domcontentloaded")
             await asyncio.sleep(0.8)
 
-        # ── Fill date fields ──────────────────────────────────────────────────
-        # The Infragistics date pickers are identified by their associated
-        # hidden input clientState names: ddcDateFiledFrom and ddcDateFiledTo
-        # We click the visible date input and type the date directly.
+        # ── Fill date fields via Infragistics API ────────────────────────────
+        # The date pickers are Infragistics WebDatePicker controls.
+        # clientState names: cphNoMargin_f_ddcDateFiledFrom / ddcDateFiledTo
+        # We use $find() — Infragistics' own JS lookup — to get the control
+        # and call set_value() with a JS Date object. This is exactly what
+        # a real user's browser does, so the clientState serializes correctly.
         date_filled = await page.evaluate(f"""() => {{
-            // Find all inputs that currently show mm/dd/yyyy or are date-type
-            const all = Array.from(document.querySelectorAll('input'));
-            const dateInputs = all.filter(i =>
-                (i.value === 'mm/dd/yyyy' || i.type === 'date') &&
-                i.offsetParent !== null  // visible
-            );
+            const fromDate = new Date('{date_from.split('/')[2]}',
+                                      {int(date_from.split('/')[0])-1},
+                                      '{date_from.split('/')[1]}');
+            const toDate   = new Date('{date_to.split('/')[2]}',
+                                      {int(date_to.split('/')[0])-1},
+                                      '{date_to.split('/')[1]}');
+
+            // Try Infragistics $find() with known control IDs
+            const fromIds = [
+                'cphNoMargin_f_ddcDateFiledFrom',
+                'cphNoMargin_f_dcDateFiled_DateTextBox1',
+                'cphNoMargin_f_ddcDateFiled_DateTextBox1',
+            ];
+            const toIds = [
+                'cphNoMargin_f_ddcDateFiledTo',
+                'cphNoMargin_f_dcDateFiled_DateTextBox2',
+                'cphNoMargin_f_ddcDateFiled_DateTextBox2',
+            ];
+
+            let fromCtrl = null, toCtrl = null;
+            for (const id of fromIds) {{
+                try {{ fromCtrl = $find(id); if (fromCtrl) break; }} catch(e) {{}}
+                // Also try as plain input
+                const el = document.getElementById(id);
+                if (el) {{ fromCtrl = {{_el: el, set_value: function(d) {{
+                    el.value = (d.getMonth()+1).toString().padStart(2,'0') + '/' +
+                               d.getDate().toString().padStart(2,'0') + '/' +
+                               d.getFullYear();
+                    ['change','blur'].forEach(ev => el.dispatchEvent(new Event(ev,{{bubbles:true}})));
+                }}}}; break; }}
+            }}
+            for (const id of toIds) {{
+                try {{ toCtrl = $find(id); if (toCtrl) break; }} catch(e) {{}}
+                const el = document.getElementById(id);
+                if (el) {{ toCtrl = {{_el: el, set_value: function(d) {{
+                    el.value = (d.getMonth()+1).toString().padStart(2,'0') + '/' +
+                               d.getDate().toString().padStart(2,'0') + '/' +
+                               d.getFullYear();
+                    ['change','blur'].forEach(ev => el.dispatchEvent(new Event(ev,{{bubbles:true}})));
+                }}}}; break; }}
+            }}
+
+            if (fromCtrl && toCtrl) {{
+                try {{ fromCtrl.set_value(fromDate); }} catch(e) {{}}
+                try {{ toCtrl.set_value(toDate);   }} catch(e) {{}}
+                return 'ig_set_value OK';
+            }}
+
+            // Last resort: find ALL inputs with mm/dd/yyyy value (no visibility filter)
+            const allInputs = Array.from(document.querySelectorAll('input'));
+            const dateInputs = allInputs.filter(i => i.value === 'mm/dd/yyyy');
             if (dateInputs.length >= 2) {{
-                // Clear and set value, then fire all needed events
-                function setDate(el, val) {{
-                    el.value = val;
-                    ['focus','input','change','blur','keyup'].forEach(evt =>
-                        el.dispatchEvent(new Event(evt, {{bubbles:true}})));
-                    // Also try Infragistics setter if available
-                    try {{
-                        const igCtrl = $find(el.id);
-                        if (igCtrl && igCtrl.set_value) {{
-                            const parts = val.split('/');
-                            igCtrl.set_value(new Date(
-                                parseInt(parts[2]),
-                                parseInt(parts[0])-1,
-                                parseInt(parts[1])
-                            ));
-                        }}
-                    }} catch(e) {{}}
+                function fmt(d) {{
+                    return (d.getMonth()+1).toString().padStart(2,'0') + '/' +
+                           d.getDate().toString().padStart(2,'0') + '/' +
+                           d.getFullYear();
                 }}
-                setDate(dateInputs[0], '{date_from}');
-                setDate(dateInputs[1], '{date_to}');
-                return 'set ' + dateInputs[0].id + ' and ' + dateInputs[1].id;
+                dateInputs[0].value = fmt(fromDate);
+                ['change','blur'].forEach(ev =>
+                    dateInputs[0].dispatchEvent(new Event(ev,{{bubbles:true}})));
+                dateInputs[1].value = fmt(toDate);
+                ['change','blur'].forEach(ev =>
+                    dateInputs[1].dispatchEvent(new Event(ev,{{bubbles:true}})));
+                return 'set by value filter: ' + dateInputs[0].id + ' / ' + dateInputs[1].id;
             }}
-            // Fallback: try by name pattern
-            const from = document.querySelector('[id*="DateFiled"][id*="From"],[name*="DateFiled"][name*="From"]');
-            const to   = document.querySelector('[id*="DateFiled"][id*="To"],[name*="DateFiled"][name*="To"]');
-            if (from && to) {{
-                from.value = '{date_from}';
-                from.dispatchEvent(new Event('change', {{bubbles:true}}));
-                to.value = '{date_to}';
-                to.dispatchEvent(new Event('change', {{bubbles:true}}));
-                return 'set by name pattern';
-            }}
-            return 'no date fields found';
+            return 'FAILED: inputs=' + allInputs.length + ' date_inputs=' + dateInputs.length;
         }}""")
         log.info("  Date fill: %s", date_filled)
 

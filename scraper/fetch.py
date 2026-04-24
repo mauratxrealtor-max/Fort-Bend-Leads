@@ -536,41 +536,89 @@ class ClerkScraper:
             candidates = DOC_TYPE_KEYWORDS.get(code, [])
             search_term = candidates[0] if candidates else (label or "")
 
-        # Build the POST payload with all required ASP.NET fields
+        # Build the POST payload using EXACT field names from intercepted POST
+        # Date clientState format: "|0|01||[[[[]],[],[]],[{},[]],"MM/DD/YYYY"]"
+        def date_client_state(date_str: str) -> str:
+            return f'|0|01||[[[[]],[],[]],[{{}},[]],"1,{date_str}"]'
+
+        # Doc type checkboxes: dclDocType$0 through $85
+        # We need to find which checkbox index corresponds to our doc type.
+        # The form has checkboxes for all available doc types.
+        # For broad search we leave all unchecked; for per-type we check matching ones.
+        doc_type_checkboxes = {}
+        if code:
+            # We'll set all doc type checkboxes — the server filters by date+type combo
+            # The checkbox values come from the __EVENTVALIDATION which lists them
+            # For now: use DataTextEdit1 text field (confirmed field name from POST)
+            pass
+
         payload = {
-            "__EVENTTARGET": "ctl00$cphNoMargin$SearchButtons1$btnSearch",
-            "__EVENTARGUMENT": "",
-            "__VIEWSTATE": vs.get("__VIEWSTATE", ""),
+            "__EVENTTARGET":  "ctl00$cphNoMargin$SearchButtons1$btnSearch",
+            "__EVENTARGUMENT": "0",
+            "__VIEWSTATE":     vs.get("__VIEWSTATE", ""),
             "__VIEWSTATEGENERATOR": vs.get("__VIEWSTATEGENERATOR", ""),
             "__EVENTVALIDATION": vs.get("__EVENTVALIDATION", ""),
-            # Search method: CONTAINS
-            "ctl00$cphNoMargin$f$ddlSearchType": "CONTAINS",
-            # Doc type field
-            "ctl00$cphNoMargin$f$DataTextEdit1": search_term,
-            # Infragistics date pickers post their value via hidden _text fields.
-            # The control name prefix is found from the form: cphNoMargin_f_dcDateFiled
-            # Try multiple possible name patterns for the date range fields.
-            "ctl00$cphNoMargin$f$dcDateFiled$DateTextBox1": date_from,
-            "ctl00$cphNoMargin$f$dcDateFiled$DateTextBox2": date_to,
-            # Infragistics WebDatePicker hidden value fields
-            "ctl00$cphNoMargin$f$dcDateFiled$WebDatePicker1_text": date_from,
-            "ctl00$cphNoMargin$f$dcDateFiled$WebDatePicker2_text": date_to,
-            "ctl00$cphNoMargin$f$dcDateFiled$dtFrom_text": date_from,
-            "ctl00$cphNoMargin$f$dcDateFiled$dtTo_text": date_to,
-            # Required party/name fields (blank = any)
-            "ctl00$cphNoMargin$f$txtParty": "",
-            "ctl00$cphNoMargin$f$txtGrantor": "",
-            "ctl00$cphNoMargin$f$txtGrantee": "",
-            "ctl00$cphNoMargin$f$txtInstrumentNoFrom": "",
-            "ctl00$cphNoMargin$f$txtInstrumentNoTo": "",
-            "ctl00$cphNoMargin$f$txtBook": "",
-            "ctl00$cphNoMargin$f$txtPage": "",
-            "ctl00$cphNoMargin$f$ddlTown": "",
+            # Infragistics clientState blobs (from intercepted POST)
+            "Header1_WebHDS_clientState":       "",
+            "Header1_WebDataMenu1_clientState": "[[null,[[[null,[],null],[{},[]],null]],null],[{},[{},{}]],null]",
             # Name search mode
             "ctl00$cphNoMargin$f$NameSearchMode": "rdoCombine",
-            "ctl00$cphNoMargin$f$drbPartyType": "",
+            "cphNoMargin_f_txtParty_clientState": '|0|01||[[[[]],[],[]],[{},[]],"01"]',
+            "cphNoMargin_f_txtParty":             "",
+            # Search type (CONTAINS)
+            "ctl00$cphNoMargin$f$ddlSearchType":  "CONTAINS",
+            "ctl00$cphNoMargin$f$drbPartyType":   "",
+            "cphNoMargin_f_txtGrantor_clientState": '|0|00||[[[[]],[],[]],[{},[]],"00"]',
+            "cphNoMargin_f_txtGrantee_clientState": '|0|00||[[[[]],[],[]],[{},[]],"00"]',
+            # DATE FIELDS — Infragistics date picker clientState with actual date values
+            "cphNoMargin_f_ddcDateFiledFrom_clientState": date_client_state(date_from),
+            "cphNoMargin_f_ddcDateFiledTo_clientState":   date_client_state(date_to),
+            # Instrument number fields
+            "cphNoMargin_f_txtInstrumentNoFrom_clientState": '|0|01||[[[[]],[],[]],[{},[]],"01"]',
+            "cphNoMargin_f_txtInstrumentNoFrom": "",
+            "cphNoMargin_f_txtInstrumentNoTo_clientState":  '|0|01||[[[[]],[],[]],[{},[]],"01"]',
+            "cphNoMargin_f_txtInstrumentNoTo":   "",
+            "cphNoMargin_f_txtBook_clientState":  '|0|01||[[[[]],[],[]],[{},[]],"01"]',
+            "cphNoMargin_f_txtBook":  "",
+            "cphNoMargin_f_txtPage_clientState":  '|0|01||[[[[]],[],[]],[{},[]],"01"]',
+            "cphNoMargin_f_txtPage":  "",
+            # Doc type text search field
+            "cphNoMargin_f_DataTextEdit1_clientState": '|0|01||[[[[]],[],[]],[{},[]],"01"]',
+            "cphNoMargin_f_DataTextEdit1": search_term,
+            # Legal description fields
+            "cphNoMargin_f_txtLDLot_clientState":           '|0|01||[[[[]],[],[]],[{},[]],"01"]',
+            "cphNoMargin_f_txtLDLot": "",
+            "cphNoMargin_f_txtLDBook_clientState":          '|0|01||[[[[]],[],[]],[{},[]],"01"]',
+            "cphNoMargin_f_txtLDBook": "",
+            "cphNoMargin_f_txtLDSection_clientState":       '|0|01||[[[[]],[],[]],[{},[]],"01"]',
+            "cphNoMargin_f_txtLDSection": "",
+            "cphNoMargin_f_txtLDStreetAddress_clientState": '|0|01||[[[[]],[],[]],[{},[]],"01"]',
+            "cphNoMargin_f_txtLDStreetAddress": "",
+            "ctl00$cphNoMargin$f$ddlTown": "",
+            "cphNoMargin_f_txtLDFreeForm_clientState":      '|0|01||[[[[]],[],[]],[{},[]],"01"]',
+            "cphNoMargin_f_txtLDFreeForm": "",
+            "cphNoMargin_f_txtLDVolume_clientState":        '|0|01||[[[[]],[],[]],[{},[]],"01"]',
+            "cphNoMargin_f_txtLDVolume": "",
+            "cphNoMargin_f_txtLDPage_clientState":          '|0|01||[[[[]],[],[]],[{},[]],"01"]',
+            "cphNoMargin_f_txtLDPage": "",
+            "cphNoMargin_f_txtLDMapcase_clientState":       '|0|01||[[[[]],[],[]],[{},[]],"01"]',
+            "cphNoMargin_f_txtLDMapcase": "",
+            "cphNoMargin_f_txtLDSlide_clientState":         '|0|01||[[[[]],[],[]],[{},[]],"01"]',
+            "cphNoMargin_f_txtLDSlide": "",
+            # Dialog/popup states
+            "cphNoMargin_dlgPopup_clientState":  "[[[[null,3,null,null,null,null,1,1,0,0,null,0]],[[[[[null,\"Document Type List\",null]],[[[[[]],[],null],[null,null],[null]],[[[[]],[],null],[null,null],[null]],[[[[]],[],null],[null,null],[null]]],[]],[{},[]],null],[[[[null,null,null,null]],[],[]],[{},[]],null]],[]],[{},[]],\"3,0,,,,,0\"]",
+            "dlgOptionWindow_clientState":       "[[[[null,3,null,null,\"700px\",\"550px\",1,1,0,0,null,0]],[[[[[null,\"Copy Options\",null]],[[[[[]],[],null],[null,null],[null]],[[[[]],[],null],[null,null],[null]],[[[[]],[],null],[null,null],[null]]],[]],[{},[]],null],[[[[null,null,null,null]],[],[]],[{},[]],null]],[]],[{},[]],\"3,0,,,700px,550px,0\"]",
+            "RangeContextMenu_clientState":      "[[[[null,null,null,null,1]],[[[[[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]],[],[]],[{},[]],null]],null],[{},[{},{}]],null]",
+            # Login form
+            "LoginForm1_txtLogonName_clientState": '|0|01||[[[[]],[],[]],[{},[]],"01"]',
+            "LoginForm1_txtLogonName": "",
+            "LoginForm1_txtPassword_clientState":  '|0|01||[[[[]],[],[]],[{},[]],"01"]',
+            "LoginForm1_txtPassword":  "",
+            "ctl00$LoginForm1$logonType": "rdoPubCpu",
+            # Calendar state — month/year of search window
+            "_ig_def_dp_cal_clientState": f"[[null,[],null],[{{}},[]],'01,{date_to.split('/')[2]},{date_to.split('/')[0]}']",
+            "ctl00$_IG_CSS_LINKS_": "~/Style/style.css|~/Style/styleforsearch.css|~/favicon.ico|~/localization/styleFromCounty.css",
         }
-
         all_records = []
         page_num = 1
 

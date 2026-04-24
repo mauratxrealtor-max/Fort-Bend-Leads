@@ -409,10 +409,68 @@ class ClerkScraper:
                 await browser.close()
                 return
 
-            # Step 2: grab cookies + VIEWSTATE from the search page
+            # Step 2: fill form and intercept the actual POST body
             cookies = await ctx.cookies()
             cookie_dict = {c["name"]: c["value"] for c in cookies}
             html = await page.content()
+
+            # Intercept the real POST to capture exact field names
+            real_post_body = {}
+            async def handle_request(request):
+                if request.method == "POST" and "SearchEntry" in request.url:
+                    try:
+                        body = request.post_data
+                        if body:
+                            from urllib.parse import parse_qs
+                            parsed = parse_qs(body, keep_blank_values=True)
+                            real_post_body.update({k: v[0] for k,v in parsed.items()})
+                            log.info("  Intercepted POST body keys: %s", list(parsed.keys()))
+                    except Exception as e:
+                        log.warning("  POST intercept error: %s", e)
+
+            page.on("request", lambda r: asyncio.ensure_future(handle_request(r)))
+
+            # Fill form and submit via Playwright to get real field names
+            await page.goto(SEARCH_URL, timeout=20_000, wait_until="domcontentloaded")
+            await asyncio.sleep(0.5)
+
+            # Fill dates using JS
+            await page.evaluate(f"""() => {{
+                const inputs = Array.from(document.querySelectorAll('input'));
+                const dateInputs = inputs.filter(i => i.value === 'mm/dd/yyyy');
+                if (dateInputs.length >= 2) {{
+                    dateInputs[0].value = '04/17/2026';
+                    dateInputs[0].dispatchEvent(new Event('change', {{bubbles:true}}));
+                    dateInputs[1].value = '04/24/2026';
+                    dateInputs[1].dispatchEvent(new Event('change', {{bubbles:true}}));
+                }}
+            }}""")
+            await asyncio.sleep(0.5)
+
+            # Submit via form.submit() to trigger POST interception
+            await page.evaluate("""() => {
+                document.getElementById('__EVENTTARGET').value =
+                    'ctl00$cphNoMargin$SearchButtons1$btnSearch';
+                document.getElementById('__EVENTARGUMENT').value = '0';
+                document.forms[0].submit();
+            }""")
+            try:
+                await page.wait_for_load_state("domcontentloaded", timeout=10_000)
+            except Exception:
+                pass
+            await asyncio.sleep(1)
+
+            if real_post_body:
+                log.info("  REAL POST FIELDS: %s", list(real_post_body.keys()))
+                # Save to file for inspection
+                import json as _json
+                dump_path = Path(__file__).parent.parent / "data" / "post_fields.json"
+                dump_path.parent.mkdir(parents=True, exist_ok=True)
+                dump_path.write_text(_json.dumps(real_post_body, indent=2))
+                log.info("  POST fields saved to data/post_fields.json")
+            else:
+                log.warning("  No POST body intercepted")
+
             await browser.close()
 
         # Step 3: use requests (with the session cookies) to POST the search form
@@ -489,9 +547,16 @@ class ClerkScraper:
             "ctl00$cphNoMargin$f$ddlSearchType": "CONTAINS",
             # Doc type field
             "ctl00$cphNoMargin$f$DataTextEdit1": search_term,
-            # Date range — these are the ASP.NET names for the datepicker fields
+            # Infragistics date pickers post their value via hidden _text fields.
+            # The control name prefix is found from the form: cphNoMargin_f_dcDateFiled
+            # Try multiple possible name patterns for the date range fields.
             "ctl00$cphNoMargin$f$dcDateFiled$DateTextBox1": date_from,
             "ctl00$cphNoMargin$f$dcDateFiled$DateTextBox2": date_to,
+            # Infragistics WebDatePicker hidden value fields
+            "ctl00$cphNoMargin$f$dcDateFiled$WebDatePicker1_text": date_from,
+            "ctl00$cphNoMargin$f$dcDateFiled$WebDatePicker2_text": date_to,
+            "ctl00$cphNoMargin$f$dcDateFiled$dtFrom_text": date_from,
+            "ctl00$cphNoMargin$f$dcDateFiled$dtTo_text": date_to,
             # Required party/name fields (blank = any)
             "ctl00$cphNoMargin$f$txtParty": "",
             "ctl00$cphNoMargin$f$txtGrantor": "",

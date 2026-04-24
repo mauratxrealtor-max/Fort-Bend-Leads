@@ -561,16 +561,26 @@ class ClerkScraper:
             await page.wait_for_load_state("domcontentloaded", timeout=20_000)
         except PWTimeout:
             pass
-        await asyncio.sleep(1)
+        await asyncio.sleep(2)  # extra wait for Infragistics grid to render
 
-        log.info("  After submit URL: %s  len=%d",
-                 page.url, len(await page.content()))
+        try:
+            pg_content = await page.content()
+        except Exception:
+            await asyncio.sleep(2)
+            pg_content = await page.content()
+
+        log.info("  After submit URL: %s  len=%d", page.url, len(pg_content))
 
         # ── Collect paginated results ─────────────────────────────────────────
         all_recs = []
         page_num = 1
+        # Log first 500 chars of body for diagnosis on first search
+        if code in ("LP", None):
+            body_start = pg_content.find("<body")
+            log.info("  Body snippet: %s",
+                     pg_content[body_start:body_start+600].replace("\n"," ")[:400])
         while True:
-            html = await page.content()
+            html = pg_content if page_num == 1 else await page.content()
             recs = self._parse_table(html, code or "OTHER", label or "All", bool(code))
             all_recs.extend(recs)
             if not recs and page_num > 1:

@@ -418,8 +418,10 @@ class ClerkScraper:
                     recs = await self._playwright_search(
                         page, None, None, date_from, date_to
                     )
+                    # Keep ALL records — don't filter by cat
+                    # The dashboard can filter by type; classify_doc_type handles categorization
                     self.records.extend(recs)
-                    log.info("Broad search: %d records", len(recs))
+                    log.info("Broad search: %d records (all types)", len(recs))
                     break
                 except PWTimeout:
                     log.warning("  Timeout attempt %d", attempt+1)
@@ -1269,6 +1271,11 @@ class ClerkScraper:
                     continue
                 if not doc_num.strip():
                     continue
+
+                # DEBUG: log what we extracted (first 3 rows only)
+                if len(recs) < 3:
+                    log.info("  DBG doc_num=%r filed=%r owner=%r len_texts=%d",
+                             doc_num, raw_date, raw_owner, len(texts))
 
                 # Parse date — look in ALL cells if needed
                 filed_str = ""

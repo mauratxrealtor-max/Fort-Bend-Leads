@@ -1237,6 +1237,12 @@ class ClerkScraper:
 
         data_rows = all_rows[1:]
         log.info("  Parsing %d data rows, col_map=%s", len(data_rows), col_map)
+        # Log first 3 rows to diagnose filtering
+        for _i, _tr in enumerate(data_rows[:3]):
+            _cells = _tr.find_all(["td","th"])
+            _texts = [c.get_text(" ", strip=True)[:25] for c in _cells]
+            log.info("  Row %d sample: %s", _i, _texts[:12])
+
 
         for tr in data_rows:
             try:

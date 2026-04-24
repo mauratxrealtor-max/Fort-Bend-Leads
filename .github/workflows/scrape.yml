@@ -57,7 +57,7 @@ jobs:
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add dashboard/records.json data/records.json data/ghl_export.csv data/response_dump.html || true
+          git add dashboard/records.json data/records.json data/ghl_export.csv data/response_dump.html data/post_fields.json || true
           git diff --cached --quiet || git commit -m "chore: update records $(date -u +'%Y-%m-%d %H:%M UTC')"
           git push
 

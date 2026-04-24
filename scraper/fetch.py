@@ -1340,7 +1340,7 @@ class ClerkScraper:
                 parcel = self.parcel_db.lookup(raw_owner)
                 if parcel:
                     rec.update({k: v for k, v in parcel.items() if v})
-                rec["flags"], _sc = score_record(rec); rec["score"] = int(_sc)
+                _sc, rec["flags"] = score_record(rec); rec["score"] = int(_sc)
                 recs.append(rec)
             except Exception as e:
                 log.debug("Row error: %s", e)

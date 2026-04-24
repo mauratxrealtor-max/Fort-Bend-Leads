@@ -409,35 +409,25 @@ class ClerkScraper:
                 await browser.close()
                 return
 
-            # Search each doc type using full Playwright (dates typed natively)
-            found_any = False
-            for code, (label, _) in DOC_TYPES.items():
-                for attempt in range(RETRY_LIMIT):
-                    try:
-                        recs = await self._playwright_search(
-                            page, code, label, date_from, date_to
-                        )
-                        if recs:
-                            found_any = True
-                        self.records.extend(recs)
-                        log.info("  [%s] %s: %d", code, label, len(recs))
-                        break
-                    except PWTimeout:
-                        log.warning("  Timeout [%s] attempt %d", code, attempt+1)
-                        await asyncio.sleep(3)
-                        await self._establish_session(page)
-                    except Exception as e:
-                        log.warning("  Error [%s]: %s", code, e)
-                        break
-
-            # Broad fallback: date only, no doc type filter
-            if not found_any:
-                log.info("Per-type got 0 — trying broad date search...")
-                recs = await self._playwright_search(
-                    page, None, None, date_from, date_to
-                )
-                self.records.extend(recs)
-                log.info("Broad: %d records", len(recs))
+            # Single broad date search — get ALL records for the week,
+            # then classify by doc type. Much more reliable than per-type searches
+            # because the portal redirects to SearchResults only when no doc type filter.
+            log.info("Running broad date search (all doc types)...")
+            for attempt in range(RETRY_LIMIT):
+                try:
+                    recs = await self._playwright_search(
+                        page, None, None, date_from, date_to
+                    )
+                    self.records.extend(recs)
+                    log.info("Broad search: %d records", len(recs))
+                    break
+                except PWTimeout:
+                    log.warning("  Timeout attempt %d", attempt+1)
+                    await asyncio.sleep(3)
+                    await self._establish_session(page)
+                except Exception as e:
+                    log.warning("  Broad search error: %s", e)
+                    break
 
             await browser.close()
         log.info("Scraper done — %d total raw records", len(self.records))
@@ -1413,7 +1403,7 @@ def save_ghl_csv(records: list[dict]):
                 "Document Number":        r.get("doc_num", ""),
                 "Amount/Debt Owed":       r.get("amount", ""),
                 "Seller Score":           r.get("score", 0),
-                "Motivated Seller Flags": "; ".join(r.get("flags", [])),
+                "Motivated Seller Flags": "; ".join(r.get("flags", []) if isinstance(r.get("flags"), list) else []),
                 "Source":                 "Fort Bend County Clerk",
                 "Public Records URL":     r.get("clerk_url", ""),
             })

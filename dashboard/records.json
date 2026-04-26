@@ -1,9 +1,9 @@
 {
-  "fetched_at": "2026-04-25T10:07:20.347275Z",
+  "fetched_at": "2026-04-26T10:10:09.490421Z",
   "source": "Fort Bend County Clerk + Fort Bend CAD",
   "date_range": {
-    "from": "2026-04-18",
-    "to": "2026-04-25"
+    "from": "2026-04-19",
+    "to": "2026-04-26"
   },
   "total": 20,
   "with_address": 0,

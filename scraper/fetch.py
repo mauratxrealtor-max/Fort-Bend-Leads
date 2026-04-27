@@ -589,6 +589,15 @@ class ClerkScraper:
                 return links;
             }""")
             log.info("  Pager links: %s", pager_info[:20])
+            # Also dump ALL visible anchor texts to find pager
+            all_visible_links = await page.evaluate("""() =>
+                Array.from(document.querySelectorAll('a'))
+                    .filter(a => a.offsetParent !== null)
+                    .map(a => a.textContent.trim())
+                    .filter(t => t.length < 30 && t.length > 0)
+                    .slice(0, 40)
+            """)
+            log.info("  Visible link texts: %s", all_visible_links)
         while True:
             html = pg_content  # updated after each page navigation
             recs = self._parse_table(html, code or "OTHER", label or "All", bool(code))
@@ -596,49 +605,56 @@ class ClerkScraper:
             if not recs and page_num > 1:
                 break
 
-            # Find next page via JS — Infragistics pager links
-            next_result = await page.evaluate("""() => {
-                // Look for Infragistics pager "Next" link
-                const candidates = [
-                    // Text-based
-                    ...Array.from(document.querySelectorAll('a')).filter(a =>
-                        a.textContent.trim() === '>' ||
-                        a.textContent.trim() === '>>' ||
-                        a.textContent.trim().toLowerCase() === 'next' ||
-                        a.title === 'Next Page' ||
-                        a.title === 'Next' ||
-                        (a.className && a.className.toLowerCase().includes('next'))
-                    ),
-                    // Infragistics pager pattern: anchor with onclick __doPostBack
-                    ...Array.from(document.querySelectorAll('a[href*="__doPostBack"]')).filter(a =>
-                        a.textContent.trim() === '>' || a.textContent.trim() === '>>'
-                    ),
-                ];
-                for (const a of candidates) {
-                    if (a.offsetParent !== null && !a.classList.contains('disabled')) {
-                        // Get href or onclick target
-                        const href = a.getAttribute('href') || '';
-                        if (href.includes('__doPostBack')) {
-                            const m = href.match(/__doPostBack\('([^']+)','([^']*)'/);
-                            if (m) {
-                                __doPostBack(m[1], m[2]);
-                                return 'dopostback:' + m[1];
-                            }
-                        }
-                        a.click();
-                        return 'clicked:' + a.textContent.trim();
-                    }
-                }
-                // Also check input buttons
-                const inputs = Array.from(document.querySelectorAll('input[type=button],input[type=submit]'))
-                    .filter(i => i.value === '>' || i.value === '>>' ||
-                                 i.value.toLowerCase().includes('next'));
-                if (inputs.length > 0 && inputs[0].offsetParent !== null) {
-                    inputs[0].click();
-                    return 'input:' + inputs[0].value;
-                }
+            # Fort Bend Infragistics grid pager — find page number links/inputs
+            next_result = await page.evaluate(f"""() => {{
+                const nextPageNum = {page_num + 1};
+
+                // Strategy 1: find page number link (e.g. "2", "3"...)
+                const pageLinks = Array.from(document.querySelectorAll('a, span'))
+                    .filter(el => el.textContent.trim() === String(nextPageNum));
+                for (const el of pageLinks) {{
+                    if (el.tagName === 'A') {{
+                        const href = el.getAttribute('href') || '';
+                        if (href.includes('__doPostBack')) {{
+                            const m = href.match(/__doPostBack\\('([^']+)','([^']*)'/);
+                            if (m) {{ __doPostBack(m[1], m[2]); return 'postback_page'; }}
+                        }}
+                        el.click();
+                        return 'clicked_page_' + nextPageNum;
+                    }}
+                }}
+
+                // Strategy 2: find any pager-style "next" control
+                // Infragistics grid pager spans: look for spans with page numbers
+                const allSpans = Array.from(document.querySelectorAll('span,td'))
+                    .filter(el => {{
+                        const cls = el.className || '';
+                        return cls.includes('pager') || cls.includes('Pager') ||
+                               cls.includes('page') || cls.includes('Page');
+                    }});
+                for (const span of allSpans) {{
+                    const links = span.querySelectorAll('a');
+                    for (const a of links) {{
+                        if (a.textContent.trim() === '>' || a.textContent.trim() === '...') {{
+                            a.click(); return 'pager_next';
+                        }}
+                    }}
+                }}
+
+                // Strategy 3: look at ALL anchors for numeric page > current
+                const numLinks = Array.from(document.querySelectorAll('a'))
+                    .filter(a => {{
+                        const t = a.textContent.trim();
+                        const n = parseInt(t);
+                        return !isNaN(n) && n === nextPageNum && a.offsetParent !== null;
+                    }});
+                if (numLinks.length > 0) {{
+                    numLinks[0].click();
+                    return 'num_link_' + nextPageNum;
+                }}
+
                 return null;
-            }""")
+            }}""")
 
             if not next_result:
                 log.info("  No next page found after page %d — done", page_num)
@@ -1389,15 +1405,16 @@ class ClerkScraper:
                 else:
                     rec_code, rec_label = classify_doc_type(raw_doc_type or label)
 
-                # Build clerk URL from any link in the row
+                # Build clerk URL — Fort Bend uses global_id links on doc numbers
                 link = ""
                 for cell in cells:
                     a = cell.find("a", href=True)
                     if a:
                         href = a["href"]
-                        if "SearchDetail" in href or "Document" in href or "View" in href:
-                            link = href if href.startswith("http") \
-                                else BASE_URL + "/" + href.lstrip("/")
+                        # Any link with global_id or SearchResults is a doc detail link
+                        if "global_id" in href or "SearchResults" in href or                            "SearchDetail" in href or "Document" in href:
+                            link = (href if href.startswith("http")
+                                    else BASE_URL + "/RealEstate/" + href.lstrip("./"))
                             break
 
                 rec = {

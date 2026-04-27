@@ -147,29 +147,109 @@ def score_record(rec: dict) -> tuple[int, list[str]]:
 #  PARCEL DB
 # ═══════════════════════════════════════════════════════════════════════════════
 class ParcelDB:
-    BULK_URLS = [
-        "https://www.fbcad.org/Property-Data/Bulk-Data-Downloads/",
-        "https://www.fbcad.org/resources/bulk-data/",
-        "https://www.fbcad.org/data/",
-    ]
+    """
+    Fort Bend CAD bulk property data.
+    Builds two lookup tables:
+      1. by_instrument: InstrumentNumber -> {prop_address, mail_address, ...}
+      2. by_owner:      OwnerName variants -> {prop_address, mail_address, ...}
+
+    Data files (uploaded by user):
+      PropertyDataExport4558080 = Property records (site address)
+      PropertyDataExport4558081 = Owner records (mailing address)
+      PropertyDataExport4558085 = Sales/deed records (InstrumentNumber)
+    """
+
+    # Paths to FBCAD data files — check multiple locations
+    FILE_PROPERTY = "PropertyDataExport4558080_1_.txt"  # Situs address
+    FILE_OWNER    = "PropertyDataExport4558081_1_.txt"  # Owner + mailing addr
+    FILE_SALES    = "PropertyDataExport4558085_1_.txt"  # InstrumentNumber -> PropertyID
+
+    @classmethod
+    def _find_data_dir(cls) -> Optional[Path]:
+        """Find the directory containing the FBCAD data files."""
+        candidates = [
+            Path("/mnt/user-data/uploads"),
+            Path(__file__).parent.parent / "data" / "fbcad",
+            Path(__file__).parent.parent / "data",
+        ]
+        for d in candidates:
+            if (d / cls.FILE_SALES).exists():
+                return d
+        return None
 
     def __init__(self):
-        self._by_owner: dict[str, dict] = {}
+        self._by_instrument: dict[str, dict] = {}  # doc_num -> parcel
+        self._by_owner: dict[str, dict] = {}        # owner name -> parcel
         self._loaded = False
 
     def load(self):
-        for url in self.BULK_URLS:
-            try:
-                log.info("Trying FBCAD: %s", url)
-                if self._try_load_from_page(url):
-                    log.info("Parcel DB loaded — %d records", len(self._by_owner))
-                    self._loaded = True
-                    return
-            except Exception as e:
-                log.warning("FBCAD %s: %s", url, e)
+        """Load parcel lookup from compact CSV (gzipped or plain)."""
+        base = Path(__file__).parent.parent / "data"
+        # Check for compact CSV (preferred — small enough to commit to git)
+        for fname in ["parcel_compact.csv.gz", "parcel_compact.csv"]:
+            fpath = base / fname
+            if fpath.exists():
+                try:
+                    self._load_compact_csv(fpath)
+                    if self._by_owner or self._by_instrument:
+                        log.info("Parcel DB loaded from %s — %d owner / %d instrument entries",
+                                 fname, len(self._by_owner), len(self._by_instrument))
+                        self._loaded = True
+                        return
+                except Exception as e:
+                    log.warning("Compact CSV load failed: %s", e)
+
+        # Fallback: raw FBCAD TXT files
+        data_dir = self._find_data_dir()
+        if not data_dir:
+            log.warning("FBCAD data files not found — address enrichment skipped")
+            return
+        prop_path  = data_dir / self.FILE_PROPERTY
+        owner_path = data_dir / self.FILE_OWNER
+        sales_path = data_dir / self.FILE_SALES
+        log.info("Using FBCAD raw TXT files from: %s", data_dir)
+        available = [p for p in [prop_path, owner_path, sales_path] if p.exists()]
+        if available:
+            self._load_from_files(prop_path, owner_path, sales_path)
+            if self._by_owner or self._by_instrument:
+                log.info("Parcel DB loaded — %d owner / %d instrument entries",
+                         len(self._by_owner), len(self._by_instrument))
+                self._loaded = True
+                return
         log.warning("Parcel DB unavailable — address enrichment skipped")
 
+    def _load_compact_csv(self, path: Path):
+        """Load the compact parcel CSV (plain or gzipped)."""
+        import gzip as _gzip
+        open_fn = _gzip.open if str(path).endswith('.gz') else open
+        with open_fn(path, 'rt', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                owner = row.get('owner','').strip()
+                instr = row.get('instr','').strip()
+                parcel = {
+                    'mail_address': row.get('mail_addr','').strip(),
+                    'mail_city':    row.get('mail_city','').strip(),
+                    'mail_state':   row.get('mail_state','TX').strip() or 'TX',
+                    'mail_zip':     row.get('mail_zip','').strip()[:5],
+                    'prop_address': row.get('prop_addr','').strip(),
+                    'prop_city':    row.get('prop_city','').strip(),
+                    'prop_state':   row.get('prop_state','TX').strip() or 'TX',
+                    'prop_zip':     row.get('prop_zip','').strip()[:5],
+                }
+                if owner:
+                    for v in self._name_variants(owner):
+                        self._by_owner.setdefault(v, parcel)
+                if instr:
+                    self._by_instrument[instr.upper()] = parcel
+                    self._by_instrument[instr.upper().lstrip('0')] = parcel
+
+    def lookup_instrument(self, doc_num: str) -> Optional[dict]:
+        """Look up parcel data by instrument/document number."""
+        return self._by_instrument.get(str(doc_num).strip())
+
     def lookup(self, owner: str) -> Optional[dict]:
+        """Look up parcel data by owner name."""
         if not self._loaded or not owner:
             return None
         for v in self._name_variants(owner):
@@ -178,184 +258,23 @@ class ParcelDB:
                 return hit
         return None
 
-    def _try_load_from_page(self, page_url: str) -> bool:
-        sess = requests.Session()
-        sess.verify = False  # handle cert issues
-        r = self._get(sess, page_url, timeout=20)
-        soup = BeautifulSoup(r.text, "lxml")
-        for a in soup.find_all("a", href=True):
-            href = a["href"]
-            if re.search(r"\.(zip|dbf|csv)(\?.*)?$", href, re.I):
-                dl_url = href if href.startswith("http") else FBCAD_BASE + href
-                log.info("Downloading parcel file: %s", dl_url)
-                return self._download_and_parse(sess, dl_url)
-        return False
-
-    def _download_and_parse(self, sess, url: str) -> bool:
-        r = self._get(sess, url, timeout=90, stream=True)
-        content, ct = r.content, r.headers.get("content-type", "").lower()
-        log.info("  Downloaded %d bytes, content-type: %s", len(content), ct)
-        if len(content) < 100:
-            log.warning("  File too small (%d bytes) — skipping", len(content))
-            return False
-        if "zip" in ct or url.lower().endswith(".zip"):
-            try:
-                zf = zipfile.ZipFile(io.BytesIO(content))
-                log.info("  ZIP contains: %s", zf.namelist())
-                for name in zf.namelist():
-                    data = zf.read(name)
-                    log.info("  Parsing %s (%d bytes)…", name, len(data))
-                    if name.lower().endswith(".dbf"):
-                        self._parse_dbf_bytes(data)
-                        if self._by_owner: return True
-                    elif name.lower().endswith(".csv"):
-                        self._parse_csv_bytes(data)
-                        if self._by_owner: return True
-                    elif (name.lower().endswith(".txt") and
-                          any(kw in name.lower() for kw in
-                              ["owner", "property", "entity", "parcel"])):
-                        self._parse_txt_bytes(data, name)
-                        if self._by_owner: return True
-            except Exception as e:
-                log.warning("ZIP: %s", e)
-        elif url.lower().endswith(".dbf"):
-            self._parse_dbf_bytes(content)
-            return bool(self._by_owner)
-        elif url.lower().endswith(".csv") or "csv" in ct or "text" in ct:
-            self._parse_csv_bytes(content)
-            return bool(self._by_owner)
-        return False
-
-    def _parse_dbf_bytes(self, data: bytes):
-        try:
-            import tempfile
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".dbf") as f:
-                f.write(data); tmp = f.name
-            try:
-                from dbfread import DBF
-                for rec in DBF(tmp, encoding="latin-1", load=True):
-                    self._ingest_row(dict(rec))
-            finally:
-                os.unlink(tmp)
-        except ImportError:
-            self._parse_dbf_raw(data)
-
-    def _parse_dbf_raw(self, data: bytes):
-        try:
-            if len(data) < 32: return
-            num_recs  = struct.unpack_from("<I", data, 4)[0]
-            hdr_bytes = struct.unpack_from("<H", data, 8)[0]
-            rec_size  = struct.unpack_from("<H", data, 10)[0]
-            fields, pos = [], 32
-            while pos < hdr_bytes - 1:
-                if data[pos] == 0x0D: break
-                name = data[pos:pos+11].rstrip(b"\x00").decode("latin-1")
-                flen = data[pos+16]
-                fields.append((name, flen)); pos += 32
-            for i in range(num_recs):
-                rs = hdr_bytes + i * rec_size
-                if rs + rec_size > len(data): break
-                if data[rs] == 0x2A: continue
-                row, col = {}, rs + 1
-                for fname, flen in fields:
-                    row[fname] = data[col:col+flen].decode("latin-1").strip()
-                    col += flen
-                self._ingest_row(row)
-        except Exception as e:
-            log.warning("DBF raw: %s", e)
-
-    def _parse_csv_bytes(self, data: bytes):
-        try:
-            reader = csv.DictReader(
-                io.StringIO(data.decode("latin-1", errors="replace")))
-            for row in reader:
-                self._ingest_row(row)
-        except Exception as e:
-            log.warning("CSV: %s", e)
-
-    def _parse_txt_bytes(self, data: bytes, filename: str = ""):
-        """Parse Orion/FBCAD pipe-delimited or tab-delimited TXT export files."""
-        try:
-            text = data.decode("latin-1", errors="replace")
-            lines = text.splitlines()
-            if not lines:
-                return
-            # Detect delimiter
-            first = lines[0]
-            delim = "|" if first.count("|") > first.count("	") else "	"
-            reader = csv.DictReader(io.StringIO(text), delimiter=delim)
-            count = 0
-            for row in reader:
-                self._ingest_row(row)
-                count += 1
-            log.info("  TXT parsed %d rows from %s", count, filename)
-        except Exception as e:
-            log.warning("TXT parse %s: %s", filename, e)
-
-    def _parse_orion_txt(self, data: bytes):
-        """Parse Orion appraisal export TXT files (pipe or tab delimited)."""
-        try:
-            text = data.decode("latin-1", errors="replace")
-            lines = text.splitlines()
-            if not lines:
-                return
-            # Detect delimiter
-            delim = '|' if lines[0].count('|') > lines[0].count('\t') else '\t'
-            headers = [h.strip().upper() for h in lines[0].split(delim)]
-            log.info("  Orion TXT headers: %s", headers[:15])
-            for line in lines[1:]:
-                if not line.strip():
-                    continue
-                parts = line.split(delim)
-                row = {headers[i]: parts[i].strip()
-                       for i in range(min(len(headers), len(parts)))}
-                self._ingest_row(row)
-        except Exception as e:
-            log.warning("Orion TXT parse: %s", e)
-
-    def _ingest_row(self, row: dict):
-        r = {k.upper().strip(): str(v).strip() for k, v in row.items()}
-        owner = (r.get("OWNER") or r.get("OWN1") or r.get("OWNER_NAME") or
-                 r.get("OWNERNAME") or "").strip()
-        if not owner: return
-        parcel = {
-            "prop_address": r.get("SITE_ADDR") or r.get("SITEADDR") or "",
-            "prop_city":    r.get("SITE_CITY") or r.get("SITECITY") or "",
-            "prop_state":   "TX",
-            "prop_zip":     r.get("SITE_ZIP")  or r.get("SITEZIP")  or "",
-            "mail_address": r.get("ADDR_1") or r.get("MAILADR1") or "",
-            "mail_city":    r.get("CITY")   or r.get("MAILCITY") or "",
-            "mail_state":   r.get("STATE")  or r.get("MAILSTATE") or "TX",
-            "mail_zip":     r.get("ZIP")    or r.get("MAILZIP")   or "",
-        }
-        for v in self._name_variants(owner):
-            self._by_owner.setdefault(v, parcel)
-
     @staticmethod
     def _name_variants(name: str) -> list[str]:
         n = name.upper().strip()
         variants = {n}
-        if "," in n:
-            parts = [p.strip() for p in n.split(",", 1)]
+        # Remove quotes
+        n_clean = n.replace('"', '').replace("'", "")
+        variants.add(n_clean)
+        if "," in n_clean:
+            parts = [p.strip() for p in n_clean.split(",", 1)]
             variants.add(f"{parts[1]} {parts[0]}")
             variants.add(f"{parts[0]} {parts[1]}")
         else:
-            words = n.split()
+            words = n_clean.split()
             if len(words) >= 2:
                 variants.add(f"{words[-1]}, {' '.join(words[:-1])}")
                 variants.add(f"{words[-1]} {' '.join(words[:-1])}")
         return variants
-
-    @staticmethod
-    def _get(sess, url, **kw):
-        for attempt in range(RETRY_LIMIT):
-            try:
-                r = sess.get(url, headers={"User-Agent": "Mozilla/5.0"}, **kw)
-                r.raise_for_status()
-                return r
-            except Exception as e:
-                if attempt == RETRY_LIMIT - 1: raise
-                time.sleep(2 ** attempt)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -563,41 +482,41 @@ class ClerkScraper:
 
         log.info("  After submit URL: %s  len=%d", page.url, len(pg_content))
 
-        # ── Collect paginated results ─────────────────────────────────────────
+        # ── Step 1: Click "get full count" to load ALL results ──────────────
+        full_count_result = await page.evaluate("""() => {
+            const links = Array.from(document.querySelectorAll('a'));
+            const fc = links.find(a =>
+                a.textContent.trim().toLowerCase().includes('get full count') ||
+                a.textContent.trim().toLowerCase().includes('full count')
+            );
+            if (fc) { fc.click(); return 'clicked: ' + fc.textContent.trim(); }
+            return null;
+        }""")
+        if full_count_result:
+            log.info("  %s", full_count_result)
+            try:
+                await page.wait_for_load_state("domcontentloaded", timeout=15_000)
+            except Exception:
+                pass
+            await asyncio.sleep(2)
+            pg_content = await page.content()
+            log.info("  After full count: len=%d", len(pg_content))
+
+        # ── Step 2: Collect all global_id detail URLs from results page ───────
+        detail_urls = await page.evaluate(f"""() => {{
+            const base = '{BASE_URL}/RealEstate/';
+            return Array.from(document.querySelectorAll('a[href*="global_id"]'))
+                .map(a => {{
+                    const href = a.getAttribute('href');
+                    return href.startsWith('http') ? href : base + href.replace('./', '');
+                }})
+                .filter((v, i, arr) => arr.indexOf(v) === i);  // dedupe
+        }}""")
+        log.info("  Found %d document detail URLs", len(detail_urls))
+
+        # ── Step 3: Parse the summary table first (gets 20 rows fast) ─────────
         all_recs = []
         page_num = 1
-        # Log first 500 chars of body for diagnosis on first search
-        if code in ("LP", None):
-            body_start = pg_content.find("<body")
-            log.info("  Body snippet: %s",
-                     pg_content[body_start:body_start+600].replace("\n"," ")[:400])
-            # Dump pager area to diagnose Next button
-            pager_info = await page.evaluate("""() => {
-                const links = Array.from(document.querySelectorAll('a')).map(a => ({
-                    text: a.textContent.trim().substring(0,20),
-                    href: (a.getAttribute('href') || '').substring(0,60),
-                    cls: a.className.substring(0,40),
-                    visible: a.offsetParent !== null
-                })).filter(a => a.text && (
-                    /^[>\d]+$/.test(a.text) ||
-                    a.text.toLowerCase().includes('next') ||
-                    a.text.toLowerCase().includes('page') ||
-                    a.cls.toLowerCase().includes('page') ||
-                    a.cls.toLowerCase().includes('pager') ||
-                    a.cls.toLowerCase().includes('next')
-                ));
-                return links;
-            }""")
-            log.info("  Pager links: %s", pager_info[:20])
-            # Also dump ALL visible anchor texts to find pager
-            all_visible_links = await page.evaluate("""() =>
-                Array.from(document.querySelectorAll('a'))
-                    .filter(a => a.offsetParent !== null)
-                    .map(a => a.textContent.trim())
-                    .filter(t => t.length < 30 && t.length > 0)
-                    .slice(0, 40)
-            """)
-            log.info("  Visible link texts: %s", all_visible_links)
         while True:
             html = pg_content  # updated after each page navigation
             recs = self._parse_table(html, code or "OTHER", label or "All", bool(code))
@@ -671,6 +590,22 @@ class ClerkScraper:
             if page_num > 500:
                 log.warning("  Hit 500-page cap, stopping")
                 break
+
+        # ── Step 4: Enrich records from detail pages ───────────────────────
+        # Map doc_num -> record for quick lookup
+        rec_map = {r["doc_num"]: r for r in all_recs}
+        enriched = 0
+        for url in detail_urls[:len(all_recs)]:  # only detail pages for our records
+            try:
+                await page.goto(url, timeout=15_000, wait_until="domcontentloaded")
+                await asyncio.sleep(0.3)
+                detail_html = await page.content()
+                self._enrich_from_detail(detail_html, rec_map)
+                enriched += 1
+            except Exception as e:
+                log.debug("  Detail fetch error: %s", e)
+        if enriched:
+            log.info("  Enriched %d records from detail pages", enriched)
 
         return all_recs
 
@@ -1226,6 +1161,97 @@ class ClerkScraper:
         return matched
 
     # ── HTML table parser ─────────────────────────────────────────────────────
+    def _enrich_from_detail(self, html: str, rec_map: dict):
+        """
+        Parse a Fort Bend document detail page to extract address and
+        full party names, then update the matching record in rec_map.
+        Detail pages are at: SearchResults.aspx?global_id=OPRxxxxxxx&type=dtl
+        """
+        soup = BeautifulSoup(html, "lxml")
+        # Find instrument number to match back to our record
+        doc_num = ""
+        for label_patterns in [
+            ["Instrument", "Reference", "Document Number", "Inst #"],
+        ]:
+            for pat in label_patterns:
+                el = soup.find(string=re.compile(pat, re.I))
+                if el:
+                    parent = el.find_parent()
+                    if parent:
+                        sib = parent.find_next_sibling()
+                        if sib:
+                            doc_num = sib.get_text(strip=True)
+                            break
+            if doc_num:
+                break
+
+        if not doc_num or doc_num not in rec_map:
+            # Try extracting from page title or URL patterns
+            for tag in soup.find_all(["td", "th", "span"]):
+                txt = tag.get_text(strip=True)
+                if re.match(r"^20\d{8}$", txt) and txt in rec_map:
+                    doc_num = txt
+                    break
+
+        if not doc_num or doc_num not in rec_map:
+            return
+
+        rec = rec_map[doc_num]
+        # Try instrument lookup from FBCAD data first
+        fbcad = self.parcel_db.lookup_instrument(doc_num)
+        if fbcad:
+            for k, v in fbcad.items():
+                if v and not rec.get(k):
+                    rec[k] = v
+        page_text = soup.get_text(" ")
+
+        # Extract grantor/grantee from detail page
+        for label in ["Grantor:", "Grantor"]:
+            m = re.search(label + r"\s*([A-Z][A-Z ,\.&]+)", page_text)
+            if m and not rec.get("owner"):
+                rec["owner"] = m.group(1).strip()
+                break
+
+        for label in ["Grantee:", "Grantee"]:
+            m = re.search(label + r"\s*([A-Z][A-Z ,\.&]+)", page_text)
+            if m and not rec.get("grantee"):
+                rec["grantee"] = m.group(1).strip()
+                break
+
+        # Extract property address — look for common address patterns
+        addr_match = re.search(
+            r"(\d+\s+[A-Z][A-Z0-9 ]+(?:ST|AVE|DR|LN|RD|BLVD|CT|PL|WAY|CIR|TRL)[.,]?\s*"
+            r"(?:[A-Z][A-Z ]+,?\s*TX\s*\d{5})?)",
+            page_text, re.I
+        )
+        if addr_match and not rec.get("prop_address"):
+            addr_parts = addr_match.group(1).strip().split()
+            # Separate street from city/state/zip
+            rec["prop_address"] = " ".join(addr_parts[:5])
+            rec["prop_state"] = "TX"
+
+        # Also look for table rows with Address label
+        for row in soup.find_all("tr"):
+            cells = row.find_all(["td", "th"])
+            if len(cells) >= 2:
+                lbl = cells[0].get_text(strip=True).lower()
+                val = cells[1].get_text(strip=True)
+                if "address" in lbl and val and not rec.get("prop_address"):
+                    rec["prop_address"] = val
+                elif "city" in lbl and val:
+                    rec["prop_city"] = val
+                elif "zip" in lbl and val:
+                    rec["prop_zip"] = val
+                elif "legal" in lbl and val and not rec.get("legal"):
+                    rec["legal"] = val
+                elif "amount" in lbl or "consideration" in lbl:
+                    if val and not rec.get("amount"):
+                        rec["amount"] = val
+
+        # Re-score after enrichment
+        rec["flags"], _sc = score_record(rec)
+        rec["score"] = int(_sc)
+
     def _parse_table(self, html: str, code: str, label: str,
                      exact_type: bool) -> list[dict]:
         """
@@ -1437,7 +1463,11 @@ class ClerkScraper:
                     "mail_state":   "TX",
                     "mail_zip":     "",
                 }
-                parcel = self.parcel_db.lookup(raw_owner)
+                # Try instrument number lookup first (most precise)
+                parcel = self.parcel_db.lookup_instrument(doc_num.strip())
+                if not parcel:
+                    # Fall back to owner name lookup
+                    parcel = self.parcel_db.lookup(raw_owner)
                 if parcel:
                     rec.update({k: v for k, v in parcel.items() if v})
                 _sc, rec["flags"] = score_record(rec); rec["score"] = int(_sc)

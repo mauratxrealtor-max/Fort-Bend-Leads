@@ -571,6 +571,24 @@ class ClerkScraper:
             body_start = pg_content.find("<body")
             log.info("  Body snippet: %s",
                      pg_content[body_start:body_start+600].replace("\n"," ")[:400])
+            # Dump pager area to diagnose Next button
+            pager_info = await page.evaluate("""() => {
+                const links = Array.from(document.querySelectorAll('a')).map(a => ({
+                    text: a.textContent.trim().substring(0,20),
+                    href: (a.getAttribute('href') || '').substring(0,60),
+                    cls: a.className.substring(0,40),
+                    visible: a.offsetParent !== null
+                })).filter(a => a.text && (
+                    /^[>\d]+$/.test(a.text) ||
+                    a.text.toLowerCase().includes('next') ||
+                    a.text.toLowerCase().includes('page') ||
+                    a.cls.toLowerCase().includes('page') ||
+                    a.cls.toLowerCase().includes('pager') ||
+                    a.cls.toLowerCase().includes('next')
+                ));
+                return links;
+            }""")
+            log.info("  Pager links: %s", pager_info[:20])
         while True:
             html = pg_content  # updated after each page navigation
             recs = self._parse_table(html, code or "OTHER", label or "All", bool(code))
@@ -578,36 +596,64 @@ class ClerkScraper:
             if not recs and page_num > 1:
                 break
 
-            # Look for Next page — Fort Bend uses various next-page patterns
-            next_btn = page.locator(
-                "a:has-text('Next'), a:has-text('>>'), a:has-text('>'), "
-                "input[value='Next >'], input[value='Next'], "
-                "a[id*='Next'], a[id*='next'], "
-                "a[title='Next Page'], a[title='next page']"
-            )
-            visible_next = None
-            for i in range(await next_btn.count()):
-                btn = next_btn.nth(i)
-                try:
-                    if await btn.is_visible():
-                        visible_next = btn
-                        break
-                except Exception:
-                    pass
+            # Find next page via JS — Infragistics pager links
+            next_result = await page.evaluate("""() => {
+                // Look for Infragistics pager "Next" link
+                const candidates = [
+                    // Text-based
+                    ...Array.from(document.querySelectorAll('a')).filter(a =>
+                        a.textContent.trim() === '>' ||
+                        a.textContent.trim() === '>>' ||
+                        a.textContent.trim().toLowerCase() === 'next' ||
+                        a.title === 'Next Page' ||
+                        a.title === 'Next' ||
+                        (a.className && a.className.toLowerCase().includes('next'))
+                    ),
+                    // Infragistics pager pattern: anchor with onclick __doPostBack
+                    ...Array.from(document.querySelectorAll('a[href*="__doPostBack"]')).filter(a =>
+                        a.textContent.trim() === '>' || a.textContent.trim() === '>>'
+                    ),
+                ];
+                for (const a of candidates) {
+                    if (a.offsetParent !== null && !a.classList.contains('disabled')) {
+                        // Get href or onclick target
+                        const href = a.getAttribute('href') || '';
+                        if (href.includes('__doPostBack')) {
+                            const m = href.match(/__doPostBack\('([^']+)','([^']*)'/);
+                            if (m) {
+                                __doPostBack(m[1], m[2]);
+                                return 'dopostback:' + m[1];
+                            }
+                        }
+                        a.click();
+                        return 'clicked:' + a.textContent.trim();
+                    }
+                }
+                // Also check input buttons
+                const inputs = Array.from(document.querySelectorAll('input[type=button],input[type=submit]'))
+                    .filter(i => i.value === '>' || i.value === '>>' ||
+                                 i.value.toLowerCase().includes('next'));
+                if (inputs.length > 0 && inputs[0].offsetParent !== null) {
+                    inputs[0].click();
+                    return 'input:' + inputs[0].value;
+                }
+                return null;
+            }""")
 
-            if visible_next is None:
+            if not next_result:
+                log.info("  No next page found after page %d — done", page_num)
                 break
-            log.info("  Paginating to page %d…", page_num + 1)
-            await visible_next.click()
+
+            log.info("  Paginating to page %d (%s)…", page_num + 1, next_result)
             try:
                 await page.wait_for_load_state("domcontentloaded", timeout=20_000)
             except Exception:
-                break
-            await asyncio.sleep(1)
+                pass
+            await asyncio.sleep(1.5)
             pg_content = await page.content()
             page_num += 1
-            if page_num > 500:  # safety cap — 90 days could be thousands
-                log.warning("  Hit page cap (500), stopping pagination")
+            if page_num > 500:
+                log.warning("  Hit 500-page cap, stopping")
                 break
 
         return all_recs

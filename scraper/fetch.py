@@ -56,7 +56,7 @@ OUTPUT_PATHS = [
     Path(__file__).parent.parent / "data"      / "records.json",
 ]
 GHL_PATH       = Path(__file__).parent.parent / "data" / "ghl_export.csv"
-LOOK_BACK_DAYS = 7
+LOOK_BACK_DAYS = 90
 RETRY_LIMIT    = 3
 
 # ── Doc-type catalogue ────────────────────────────────────────────────────────
@@ -572,27 +572,42 @@ class ClerkScraper:
             log.info("  Body snippet: %s",
                      pg_content[body_start:body_start+600].replace("\n"," ")[:400])
         while True:
-            html = pg_content if page_num == 1 else await page.content()
+            html = pg_content  # updated after each page navigation
             recs = self._parse_table(html, code or "OTHER", label or "All", bool(code))
             all_recs.extend(recs)
             if not recs and page_num > 1:
                 break
 
-            # Look for Next page
+            # Look for Next page — Fort Bend uses various next-page patterns
             next_btn = page.locator(
-                "a:has-text('Next'), a:has-text('>>'), "
-                "input[value='Next >'], a[id*='Next']"
+                "a:has-text('Next'), a:has-text('>>'), a:has-text('>'), "
+                "input[value='Next >'], input[value='Next'], "
+                "a[id*='Next'], a[id*='next'], "
+                "a[title='Next Page'], a[title='next page']"
             )
-            if await next_btn.count() == 0:
+            visible_next = None
+            for i in range(await next_btn.count()):
+                btn = next_btn.nth(i)
+                try:
+                    if await btn.is_visible():
+                        visible_next = btn
+                        break
+                except Exception:
+                    pass
+
+            if visible_next is None:
                 break
-            await next_btn.first.click()
+            log.info("  Paginating to page %d…", page_num + 1)
+            await visible_next.click()
             try:
-                await page.wait_for_load_state("domcontentloaded", timeout=15_000)
+                await page.wait_for_load_state("domcontentloaded", timeout=20_000)
             except Exception:
                 break
-            await asyncio.sleep(0.5)
+            await asyncio.sleep(1)
+            pg_content = await page.content()
             page_num += 1
-            if page_num > 30:
+            if page_num > 500:  # safety cap — 90 days could be thousands
+                log.warning("  Hit page cap (500), stopping pagination")
                 break
 
         return all_recs
@@ -1263,7 +1278,29 @@ class ClerkScraper:
                 doc_num      = _get("doc_num") or texts[0]
                 raw_doc_type = _get("doc_type")
                 raw_date     = _get("filed")
-                raw_owner    = _get("owner")
+
+                # Fort Bend party field format: "[R] GRANTOR NAME (+) [E] GRANTEE NAME"
+                # Find the party cell by scanning all cells for [R] pattern
+                party_raw = ""
+                for _t in texts:
+                    if "[R]" in _t or "[E]" in _t:
+                        party_raw = _t
+                        break
+
+                raw_owner   = ""
+                raw_grantee = ""
+                if party_raw:
+                    # Extract grantor (Recorder/Grantor = [R])
+                    r_match = re.search(r'\[R\]\s*([^(+\[]+)', party_raw)
+                    if r_match:
+                        raw_owner = r_match.group(1).strip().rstrip("(+").strip()
+                    # Extract grantee ([E])
+                    e_match = re.search(r'\[E\]\s*([^\[+]+)', party_raw)
+                    if e_match:
+                        raw_grantee = e_match.group(1).strip()
+                else:
+                    raw_owner = _get("owner")
+                    raw_grantee = _get("grantee")
 
                 # Skip header-like rows
                 if re.match(r"^(instrument|doc|ref|session|batch|#|no\.?)$",
@@ -1324,7 +1361,7 @@ class ClerkScraper:
                     "cat":          rec_code,
                     "cat_label":    rec_label,
                     "owner":        raw_owner,
-                    "grantee":      _get("grantee"),
+                    "grantee":      raw_grantee or _get("grantee"),
                     "amount":       _get("amount"),
                     "legal":        _get("legal"),
                     "clerk_url":    link or SEARCH_URL,

@@ -452,6 +452,9 @@ footer {
   </div>
 </div>
 
+<!-- DEBUG PANEL — auto-hides after 10s -->
+<div id="debug-panel" style="background:#111;border:1px solid #333;padding:12px 24px;font-size:11px;font-family:monospace;color:#7ec8a0;white-space:pre-wrap;line-height:1.8;"></div>
+
 <!-- ═══ CONTROLS ══════════════════════════════════════════ -->
 <div id="controls">
   <input id="search-box" class="ctrl-input" type="text" placeholder="Search owner, address, doc #…" oninput="applyFilters()"/>
@@ -570,47 +573,67 @@ let SORT_DIR     = 'desc';
 
 // ── Boot ─────────────────────────────────────────────────
 (async function init() {
+  const debug = (msg) => {
+    console.log(msg);
+    const el = document.getElementById('debug-panel');
+    if (el) el.innerHTML += escHtml(msg) + '<br>';
+  };
+
   try {
-    const r = await fetch('records.json?' + Date.now());
-    const data = await r.json();
-    ALL_RECORDS = data.records || [];
+    const url = 'records.json?' + Date.now();
+    debug('Fetching: ' + url);
+    const r = await fetch(url);
+    debug('HTTP status: ' + r.status + ' ' + r.statusText);
+    if (!r.ok) throw new Error('HTTP ' + r.status);
 
-    // DEBUG: log first record to console
-    console.log('records.json loaded:', data.total, 'total, array:', ALL_RECORDS.length);
-    if (ALL_RECORDS.length > 0) {
-      const sample = ALL_RECORDS[0];
-      console.log('Sample record:', JSON.stringify(sample));
-      console.log('score type:', typeof sample.score, 'value:', sample.score);
-      console.log('cat:', sample.cat, 'filed:', sample.filed);
-    }
+    const text = await r.text();
+    debug('Response length: ' + text.length + ' chars');
+    debug('First 100 chars: ' + text.slice(0,100));
 
-    // Normalize records — ensure score is int, flags is array
-    ALL_RECORDS = ALL_RECORDS.map(r => ({
+    const data = JSON.parse(text);
+    debug('Parsed OK. total=' + data.total + ' records_array=' + (data.records||[]).length);
+
+    ALL_RECORDS = (data.records || []).map(r => ({
       ...r,
       score: parseInt(Array.isArray(r.score) ? r.score[0] : r.score) || 0,
-      flags: Array.isArray(r.flags) ? r.flags : (typeof r.flags === 'string' ? r.flags.split(',').filter(Boolean) : []),
+      flags: Array.isArray(r.flags) ? r.flags
+           : (typeof r.flags === 'number' ? []
+           : (typeof r.flags === 'string' ? r.flags.split(',').filter(Boolean) : [])),
       cat:   r.cat || 'OTHER',
       filed: r.filed || '',
     }));
 
-    console.log('After normalize, first record score:', ALL_RECORDS[0]?.score);
+    debug('ALL_RECORDS after normalize: ' + ALL_RECORDS.length);
+    if (ALL_RECORDS.length > 0) {
+      const s = ALL_RECORDS[0];
+      debug('First: doc_num=' + s.doc_num + ' score=' + s.score + ' flags=' + JSON.stringify(s.flags) + ' cat=' + s.cat);
+    }
 
-    // Header meta
     document.getElementById('fetch-time').textContent =
       data.fetched_at
         ? 'Updated ' + new Date(data.fetched_at).toLocaleString()
         : 'Not yet run';
     const dr = data.date_range || {};
     document.getElementById('date-range').textContent =
-      (dr.from && dr.to) ? `${dr.from} → ${dr.to}` : '7-day window';
+      (dr.from && dr.to) ? dr.from + ' → ' + dr.to : '7-day window';
     document.getElementById('footer-ts').textContent =
       'Fetched: ' + (data.fetched_at || 'pending');
 
     buildStats();
     applyFilters();
+    debug('FILTERED after applyFilters: ' + FILTERED.length);
     buildCharts();
+
+    // Hide debug after 10s if records loaded
+    if (ALL_RECORDS.length > 0) {
+      setTimeout(() => {
+        const el = document.getElementById('debug-panel');
+        if (el) el.style.display = 'none';
+      }, 10000);
+    }
+
   } catch(e) {
-    console.error('Dashboard init error:', e);
+    debug('ERROR: ' + e.message);
     document.getElementById('empty-state').style.display = 'block';
     document.querySelector('.table-wrap').style.display = 'none';
   }

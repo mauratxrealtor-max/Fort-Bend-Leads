@@ -807,21 +807,9 @@ class ClerkScraper:
                     log.warning("  Hit 500-page cap, stopping")
                     break
 
-        # ── Step 4: Enrich records from detail pages ───────────────────────
-        # Map doc_num -> record for quick lookup
-        rec_map = {r["doc_num"]: r for r in all_recs}
-        enriched = 0
-        for url in detail_urls[:len(all_recs)]:  # only detail pages for our records
-            try:
-                await page.goto(url, timeout=15_000, wait_until="domcontentloaded")
-                await asyncio.sleep(0.3)
-                detail_html = await page.content()
-                self._enrich_from_detail(detail_html, rec_map)
-                enriched += 1
-            except Exception as e:
-                log.debug("  Detail fetch error: %s", e)
-        if enriched:
-            log.info("  Enriched %d records from detail pages", enriched)
+        # Detail page enrichment disabled — parcel DB provides better addresses
+        # and detail page parsing was overwriting correct addresses with junk HTML
+        log.info("  Skipping detail page enrichment (parcel DB addresses used)")
 
         return all_recs
 
@@ -1439,7 +1427,7 @@ class ClerkScraper:
 
                 legal_m = re.search(
                     r'(?:LT|TRACT|LOTS?|SEC)\s+[\w\s]+(?=\s+Temp)', part)
-                legal = legal_m.group(0).strip() if legal_m else ""
+                legal = legal_m.group(0).strip().rstrip('Temp').strip() if legal_m else ""
 
                 glob_m = re.search(r'(OPR\d+)', part)
                 global_id = glob_m.group(1) if glob_m else ""

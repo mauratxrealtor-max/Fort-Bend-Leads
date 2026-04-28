@@ -340,55 +340,55 @@ class ClerkScraper:
                 await browser.close()
                 return
 
-            # Single broad date search — get ALL records for the week,
-            # then classify by doc type. Much more reliable than per-type searches
-            # because the portal redirects to SearchResults only when no doc type filter.
-            log.info("Running broad date search (all doc types)...")
-            for attempt in range(RETRY_LIMIT):
-                try:
-                    recs = await self._playwright_search(
-                        page, None, None, date_from, date_to
-                    )
-                    # Keep ALL records — don't filter by cat
-                    # The dashboard can filter by type; classify_doc_type handles categorization
-                    self.records.extend(recs)
-                    log.info("Broad search: %d records (all types)", len(recs))
-                    break
-                except PWTimeout:
-                    log.warning("  Timeout attempt %d", attempt+1)
-                    await asyncio.sleep(3)
-                    await self._establish_session(page)
-                except Exception as e:
-                    log.warning("  Broad search error: %s", e)
-                    break
-
-            # Targeted searches for motivated-seller doc types
-            # These search the doc type text field specifically
+            # Run targeted searches for each motivated-seller type FIRST
+            # Each gets up to 20 records for that type over 90 days.
+            # Then broad search as fallback to catch anything missed.
             TARGETED = [
                 ("LP",       "LIS PENDENS"),
                 ("NOFC",     "FORECLOSURE"),
                 ("JUD",      "JUDGMENT"),
                 ("LNIRS",    "IRS"),
-                ("LNCORPTX", "STATE TAX LIEN"),
+                ("LNCORPTX", "STATE TAX"),
                 ("LNMECH",   "MECHANIC"),
                 ("LNHOA",    "HOA"),
                 ("PRO",      "PROBATE"),
                 ("TAXDEED",  "TAX DEED"),
-                ("LNFED",    "FEDERAL LIEN"),
+                ("LNFED",    "FEDERAL"),
+                ("LN",       "LIEN"),
             ]
-            existing = {r["doc_num"] for r in self.records}
+            existing = set()
+            total_found = 0
+
             for code, term in TARGETED:
                 try:
+                    label = DOC_TYPES.get(code, (term, ""))[0]
                     recs = await self._targeted_search(
-                        page, code, DOC_TYPES[code][0], term, date_from, date_to
+                        page, code, label, term, date_from, date_to
                     )
                     new_recs = [r for r in recs if r["doc_num"] not in existing]
                     if new_recs:
                         self.records.extend(new_recs)
                         existing.update(r["doc_num"] for r in new_recs)
-                        log.info("  [%s] +%d records", code, len(new_recs))
+                        total_found += len(new_recs)
+                        log.info("  [%s] %s: +%d (total=%d)", code, term, len(new_recs), total_found)
+                    else:
+                        log.info("  [%s] %s: 0 new", code, term)
                 except Exception as e:
-                    log.debug("  Targeted [%s]: %s", code, e)
+                    log.warning("  Targeted [%s] error: %s", code, e)
+
+            # Broad fallback — catches any doc types not in targeted list
+            log.info("Running broad fallback search...")
+            try:
+                recs = await self._playwright_search(page, None, None, date_from, date_to)
+                new_recs = [r for r in recs if r["doc_num"] not in existing]
+                if new_recs:
+                    self.records.extend(new_recs)
+                    existing.update(r["doc_num"] for r in new_recs)
+                    total_found += len(new_recs)
+                log.info("Broad fallback: +%d new (grand total=%d)", len(new_recs), total_found)
+            except Exception as e:
+                log.warning("  Broad fallback error: %s", e)
+
 
             await browser.close()
         log.info("Scraper done — %d total raw records", len(self.records))
@@ -459,6 +459,7 @@ class ClerkScraper:
 
         # Only process if we got SearchResults
         if "SearchResults" not in page.url:
+            log.debug("  [%s] stayed on SearchEntry — no results", code)
             return []
 
         try:
@@ -467,6 +468,41 @@ class ClerkScraper:
             await asyncio.sleep(2)
             pg_content = await page.content()
 
+        # Click "get full count" to load all records for this type
+        full_count = await page.evaluate("""() => {
+            const fc = Array.from(document.querySelectorAll('a')).find(a =>
+                a.textContent.trim().toLowerCase().includes('get full count'));
+            if (fc) { fc.click(); return true; }
+            return false;
+        }""")
+        if full_count:
+            await asyncio.sleep(3)
+            try:
+                await page.wait_for_load_state("domcontentloaded", timeout=10_000)
+            except Exception:
+                pass
+            await asyncio.sleep(1)
+            try:
+                pg_content = await page.content()
+            except Exception:
+                await asyncio.sleep(2)
+                pg_content = await page.content()
+
+        # Try full-count text parser first (handles concatenated cell format)
+        if len(pg_content) > 400_000:
+            from bs4 import BeautifulSoup as _BS
+            import re as _re
+            _soup = _BS(pg_content, "lxml")
+            for _td in _soup.find_all(["td", "th"]):
+                _txt = _td.get_text(" ")
+                if len(_re.findall(r'View\s+20\d{8}', _txt)) >= 3:
+                    recs = self._parse_full_count_text(_txt, code, label)
+                    if recs:
+                        log.info("  [%s] full-count parser: %d records", code, len(recs))
+                        return recs
+                    break
+
+        # Fall back to standard table parser
         recs = self._parse_table(pg_content, code, label, True)
         return recs
 

@@ -409,7 +409,7 @@ footer {
   <div class="brand">
     <span class="brand-tag">Fort Bend County · Richmond, TX</span>
     <div class="brand-name">Motivated Seller Intel</div>
-    <div class="brand-sub">Public records scraper — last 7 days</div>
+    <div class="brand-sub">Public records scraper — 90-day lookback</div>
   </div>
   <div class="header-meta">
     <div class="meta-pill"><span class="pulse"></span> <span id="fetch-time">Loading…</span></div>
@@ -452,9 +452,7 @@ footer {
   </div>
 </div>
 
-<!-- DEBUG PANEL — auto-hides after 10s -->
-<div id="debug-panel" style="background:#111;border:1px solid #333;padding:12px 24px;font-size:11px;font-family:monospace;color:#7ec8a0;white-space:pre-wrap;line-height:1.8;"></div>
-
+<div id="debug-panel" style="display:none;background:#111;border:1px solid #e05555;padding:12px 24px;font-size:11px;font-family:monospace;color:#7ec8a0;white-space:pre-wrap;line-height:1.8;"></div>
 <!-- ═══ CONTROLS ══════════════════════════════════════════ -->
 <div id="controls">
   <input id="search-box" class="ctrl-input" type="text" placeholder="Search owner, address, doc #…" oninput="applyFilters()"/>
@@ -624,16 +622,12 @@ let SORT_DIR     = 'desc';
     debug('FILTERED after applyFilters: ' + FILTERED.length);
     buildCharts();
 
-    // Hide debug after 10s if records loaded
-    if (ALL_RECORDS.length > 0) {
-      setTimeout(() => {
-        const el = document.getElementById('debug-panel');
-        if (el) el.style.display = 'none';
-      }, 10000);
-    }
+
 
   } catch(e) {
-    debug('ERROR: ' + e.message);
+    debug('ERROR: ' + e.message + ' | stack: ' + e.stack);
+    const dp = document.getElementById('debug-panel');
+    if (dp) dp.style.display = 'block';
     document.getElementById('empty-state').style.display = 'block';
     document.querySelector('.table-wrap').style.display = 'none';
   }
@@ -709,34 +703,43 @@ function renderTable() {
   es.style.display  = 'none';
   tw.style.display  = 'block';
 
-  tbody.innerHTML = FILTERED.map((r,i) => {
-    const sc    = parseInt(Array.isArray(r.score)?r.score[0]:r.score)||0;
-    const scCls = sc>=70?'score-hi':sc>=50?'score-mid':'score-lo';
-    const flags = (r.flags||[]);
-    const hotFlags = ['Lis pendens','Pre-foreclosure','Judgment lien','Tax lien'];
+  const rows = [];
+  FILTERED.forEach((r,i) => {
+    try {
+      const sc    = parseInt(Array.isArray(r.score)?r.score[0]:r.score)||0;
+      const scCls = sc>=70?'score-hi':sc>=50?'score-mid':'score-lo';
+      const flags = Array.isArray(r.flags) ? r.flags : [];
+      const hotFlags = ['Lis pendens','Pre-foreclosure','Judgment lien','Tax lien'];
 
-    const addrHtml = (r.prop_address)
-      ? `<div class="addr-main">${r.prop_address}</div>
-         <div class="addr-sub">${[r.prop_city,r.prop_state,r.prop_zip].filter(Boolean).join(', ')}</div>`
-      : `<span class="no-addr">no address</span>`;
+      // Sanitize address — truncate if junk from detail page
+      const propAddr = (r.prop_address && r.prop_address.length < 80) ? r.prop_address : '';
+      const addrHtml = propAddr
+        ? `<div class="addr-main">${escHtml(propAddr)}</div>
+           <div class="addr-sub">${escHtml([r.prop_city,r.prop_state,r.prop_zip].filter(Boolean).join(', '))}</div>`
+        : `<span class="no-addr">no address</span>`;
 
-    const amt = r.amount ? `<span class="amount${amtVal(r.amount)>100000?' big':''}">${fmtAmt(r.amount)}</span>` : '—';
+      const amt = r.amount ? `<span class="amount${amtVal(r.amount)>100000?' big':''}">${fmtAmt(r.amount)}</span>` : '—';
 
-    const flagsHtml = flags.slice(0,3).map(f =>
-      `<span class="flag-tag${hotFlags.includes(f)?' hot':''}">${f}</span>`
-    ).join('');
+      const flagsHtml = flags.slice(0,3).map(f =>
+        `<span class="flag-tag${hotFlags.includes(f)?' hot':''}">${escHtml(String(f))}</span>`
+      ).join('');
 
-    return `<tr onclick="openModal(${i})" style="animation-delay:${Math.min(i*20,300)}ms">
-      <td><span class="score-badge ${scCls}">${sc}</span></td>
-      <td><span class="chip chip-${r.cat}">${r.cat||'—'}</span></td>
-      <td class="mono">${r.filed||'—'}</td>
-      <td>${escHtml(r.owner||'Unknown')}</td>
-      <td>${addrHtml}</td>
-      <td class="mono">${amt}</td>
-      <td><div class="flags">${flagsHtml}</div></td>
-      <td class="mono" style="color:var(--muted);font-size:11px">${escHtml(r.doc_num||'—')}</td>
-    </tr>`;
-  }).join('');
+      rows.push(`<tr onclick="openModal(${i})" style="animation-delay:${Math.min(i*20,300)}ms">
+        <td><span class="score-badge ${scCls}">${sc}</span></td>
+        <td><span class="chip chip-${escHtml(r.cat||'OTHER')}">${escHtml(r.cat||'—')}</span></td>
+        <td class="mono">${escHtml(r.filed||'—')}</td>
+        <td>${escHtml((r.owner||'Unknown').slice(0,60))}</td>
+        <td>${addrHtml}</td>
+        <td class="mono">${amt}</td>
+        <td><div class="flags">${flagsHtml}</div></td>
+        <td class="mono" style="color:var(--muted);font-size:11px">${escHtml(r.doc_num||'—')}</td>
+      </tr>`);
+    } catch(err) {
+      console.warn('Row render error at index', i, err);
+      rows.push(`<tr><td colspan="8" style="color:var(--muted);font-size:11px">Row ${i+1} render error</td></tr>`);
+    }
+  });
+  tbody.innerHTML = rows.join('');
 }
 
 // ── Modal ─────────────────────────────────────────────────

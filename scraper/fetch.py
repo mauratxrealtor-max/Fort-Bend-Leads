@@ -249,14 +249,26 @@ class ParcelDB:
         return self._by_instrument.get(str(doc_num).strip())
 
     def lookup(self, owner: str) -> Optional[dict]:
-        """Look up parcel data by owner name."""
+        """Look up parcel data by owner name with fuzzy fallback."""
         if not self._loaded or not owner:
             return None
+        # Try all name variants first (exact)
         for v in self._name_variants(owner):
             hit = self._by_owner.get(v)
             if hit:
                 return hit
+        # Clean noise words and retry
+        clean = re.sub(
+            r"\s*(\(\+\)|ET\s+AL|ET\s+UX|TRUSTEE|TRUST|LLC|INC|CORP|JR\.?|SR\.?|II|III)\s*",
+            " ", owner.upper()
+        ).strip()
+        if clean != owner.upper().strip():
+            for v in self._name_variants(clean):
+                hit = self._by_owner.get(v)
+                if hit:
+                    return hit
         return None
+
 
     @staticmethod
     def _name_variants(name: str) -> list[str]:
@@ -632,27 +644,94 @@ class ClerkScraper:
         }}""")
         log.info("  Found %d document detail URLs", len(detail_urls))
 
-        # ── Step 3: Parse results — try full-count text parser first ──────────
+        # ── Step 3: Parse ALL pages from the full-count results ─────────────
         all_recs = []
+        page_num = 1
+        MAX_PAGES = 200  # cap at 200 pages = 4000 records max per run
 
-        # Extract the large concatenated text cells (from the full-count page)
-        # These contain all records in flat text format
-        if len(pg_content) > 400_000:  # only on full-count pages
-            from bs4 import BeautifulSoup as _BS
-            _soup = _BS(pg_content, "lxml")
-            for _td in _soup.find_all(["td", "th"]):
-                _txt = _td.get_text(" ")
-                # Look for cells containing 10+ "View 20xxxxxxxx" patterns
-                if len(re.findall(r'View\s+20\d{8}', _txt)) >= 5:
-                    log.info("  Parsing full-count text cell (%d chars, %d records)",
-                             len(_txt), len(re.findall(r'View\s+20\d{8}', _txt)))
-                    all_recs = self._parse_full_count_text(
-                        _txt, code or "OTHER", label or "All")
-                    log.info("  Full-count parse: %d records", len(all_recs))
-                    break
+        while page_num <= MAX_PAGES:
+            cur_html = pg_content
 
-        # Fall back to standard table parser if full-count parse found nothing
-        if not all_recs:
+            # Try full-count text cell parser (faster, handles the big concatenated cell)
+            if len(cur_html) > 400_000:
+                from bs4 import BeautifulSoup as _BS
+                _soup = _BS(cur_html, "lxml")
+                page_recs = []
+                for _td in _soup.find_all(["td", "th"]):
+                    _txt = _td.get_text(" ")
+                    if len(re.findall(r'View\s+20\d{8}', _txt)) >= 5:
+                        log.info("  Page %d: parsing full-count cell (%d chars, ~%d records)",
+                                 page_num, len(_txt),
+                                 len(re.findall(r'View\s+20\d{8}', _txt)))
+                        page_recs = self._parse_full_count_text(
+                            _txt, code or "OTHER", label or "All")
+                        break
+                if not page_recs:
+                    page_recs = self._parse_table(
+                        cur_html, code or "OTHER", label or "All", bool(code))
+            else:
+                page_recs = self._parse_table(
+                    cur_html, code or "OTHER", label or "All", bool(code))
+
+            if not page_recs:
+                log.info("  Page %d: no records — stopping pagination", page_num)
+                break
+
+            all_recs.extend(page_recs)
+            log.info("  Page %d: +%d records (total so far: %d)",
+                     page_num, len(page_recs), len(all_recs))
+
+            if page_num >= MAX_PAGES:
+                log.warning("  Hit %d-page cap", MAX_PAGES)
+                break
+
+            # Navigate to next page via __doPostBack
+            next_page_num = page_num + 1
+            clicked = await page.evaluate(f"""() => {{
+                // Find "Page N" link where N = {next_page_num}
+                const allLinks = Array.from(document.querySelectorAll('a'));
+                for (const a of allLinks) {{
+                    const txt = a.textContent.trim();
+                    if (txt === 'Page {next_page_num}') {{
+                        const href = a.getAttribute('href') || '';
+                        if (href.includes('__doPostBack')) {{
+                            const m = href.match(/__doPostBack\\('([^']+)','([^']*)'/);
+                            if (m) {{ __doPostBack(m[1], m[2]); return 'postback'; }}
+                        }}
+                        a.click();
+                        return 'click';
+                    }}
+                }}
+                // Also check onclick attributes
+                for (const el of document.querySelectorAll('[onclick]')) {{
+                    const oc = el.getAttribute('onclick') || '';
+                    if (oc.includes('Page {next_page_num}') ||
+                        (el.textContent.trim() === 'Page {next_page_num}')) {{
+                        el.click();
+                        return 'onclick';
+                    }}
+                }}
+                return null;
+            }}""")
+
+            if not clicked:
+                log.info("  No 'Page %d' link found — done", next_page_num)
+                break
+
+            log.info("  Navigating to page %d (%s)...", next_page_num, clicked)
+            try:
+                await page.wait_for_load_state("domcontentloaded", timeout=20_000)
+            except Exception:
+                pass
+            await asyncio.sleep(2)
+            try:
+                pg_content = await page.content()
+            except Exception:
+                await asyncio.sleep(2)
+                pg_content = await page.content()
+            page_num += 1
+
+        if False:  # dummy block to maintain indentation for old fallback
             page_num = 1
             while True:
                 html = pg_content  # updated after each page navigation
@@ -1747,7 +1826,8 @@ def build_output(records: list[dict]) -> dict:
         },
         "total":        len(records),
         "with_address": sum(1 for r in records
-                            if r.get("prop_address") or r.get("mail_address")),
+                            if (r.get("prop_address") and len(r.get("prop_address","")) < 80)
+                            or (r.get("mail_address") and len(r.get("mail_address","")) < 80)),
         "records":      sorted(records,
                                key=lambda x: x.get("score", 0), reverse=True),
     }

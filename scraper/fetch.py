@@ -350,8 +350,113 @@ class ClerkScraper:
                     log.warning("  Broad search error: %s", e)
                     break
 
+            # Targeted searches for motivated-seller doc types
+            # These search the doc type text field specifically
+            TARGETED = [
+                ("LP",       "LIS PENDENS"),
+                ("NOFC",     "FORECLOSURE"),
+                ("JUD",      "JUDGMENT"),
+                ("LNIRS",    "IRS"),
+                ("LNCORPTX", "STATE TAX LIEN"),
+                ("LNMECH",   "MECHANIC"),
+                ("LNHOA",    "HOA"),
+                ("PRO",      "PROBATE"),
+                ("TAXDEED",  "TAX DEED"),
+                ("LNFED",    "FEDERAL LIEN"),
+            ]
+            existing = {r["doc_num"] for r in self.records}
+            for code, term in TARGETED:
+                try:
+                    recs = await self._targeted_search(
+                        page, code, DOC_TYPES[code][0], term, date_from, date_to
+                    )
+                    new_recs = [r for r in recs if r["doc_num"] not in existing]
+                    if new_recs:
+                        self.records.extend(new_recs)
+                        existing.update(r["doc_num"] for r in new_recs)
+                        log.info("  [%s] +%d records", code, len(new_recs))
+                except Exception as e:
+                    log.debug("  Targeted [%s]: %s", code, e)
+
             await browser.close()
         log.info("Scraper done — %d total raw records", len(self.records))
+
+    async def _targeted_search(self, page, code, label, search_term,
+                               date_from, date_to) -> list[dict]:
+        """
+        Search by doc type keyword using the DataTextEdit1 field.
+        Unlike broad search, this sets the search term so the portal
+        returns only matching doc types — but still navigates to SearchResults.
+        """
+        await page.goto(SEARCH_URL, timeout=20_000, wait_until="domcontentloaded")
+        await asyncio.sleep(0.5)
+
+        # Check session still valid
+        html = await page.content()
+        if "session" in html.lower() and "expired" in html.lower():
+            await self._establish_session(page)
+            await page.goto(SEARCH_URL, timeout=20_000, wait_until="domcontentloaded")
+            await asyncio.sleep(0.5)
+
+        # Fill dates
+        date_filled = await page.evaluate(f"""() => {{
+            const fromDate = new Date('{date_from.split('/')[2]}',
+                                      {int(date_from.split('/')[0])-1},
+                                      '{date_from.split('/')[1]}');
+            const toDate   = new Date('{date_to.split('/')[2]}',
+                                      {int(date_to.split('/')[0])-1},
+                                      '{date_to.split('/')[1]}');
+            const fromIds = ['cphNoMargin_f_ddcDateFiledFrom'];
+            const toIds   = ['cphNoMargin_f_ddcDateFiledTo'];
+            let ok = 0;
+            for (const id of fromIds) {{
+                try {{ const c = $find(id); if (c) {{ c.set_value(fromDate); ok++; break; }} }} catch(e) {{}}
+            }}
+            for (const id of toIds) {{
+                try {{ const c = $find(id); if (c) {{ c.set_value(toDate); ok++; break; }} }} catch(e) {{}}
+            }}
+            return ok;
+        }}""")
+
+        # Fill doc type search field
+        await page.evaluate(f"""() => {{
+            const el = document.getElementById('cphNoMargin_f_DataTextEdit1') ||
+                       document.querySelector('[name="cphNoMargin_f_DataTextEdit1"]');
+            if (el) {{
+                el.value = '{search_term}';
+                el.dispatchEvent(new Event('change', {{bubbles:true}}));
+            }}
+            const sel = document.querySelector('[id*="ddlSearchType"],[name*="ddlSearchType"]');
+            if (sel) sel.value = 'CONTAINS';
+        }}""")
+
+        # Submit
+        await page.evaluate("""() => {
+            document.getElementById('__EVENTTARGET').value =
+                'ctl00$cphNoMargin$SearchButtons1$btnSearch';
+            document.getElementById('__EVENTARGUMENT').value = '0';
+            if (typeof WebForm_OnSubmit === 'function') WebForm_OnSubmit();
+            document.forms[0].submit();
+        }""")
+
+        try:
+            await page.wait_for_load_state("domcontentloaded", timeout=20_000)
+        except PWTimeout:
+            pass
+        await asyncio.sleep(2)
+
+        # Only process if we got SearchResults
+        if "SearchResults" not in page.url:
+            return []
+
+        try:
+            pg_content = await page.content()
+        except Exception:
+            await asyncio.sleep(2)
+            pg_content = await page.content()
+
+        recs = self._parse_table(pg_content, code, label, True)
+        return recs
 
     async def _playwright_search(self, page, code, label, date_from, date_to):
         """
@@ -1300,23 +1405,26 @@ class ClerkScraper:
 
         # Strategy 2: find largest table with date-like content
         if not target:
-            best_tbl, best_score = None, 0
+            best_tbl, best_score, best_rows = None, 0, 0
             for tbl in soup.find_all("table"):
                 rows = tbl.find_all("tr")
                 if len(rows) < 2:
                     continue
-                # Score by number of rows with date-like content
-                score = 0
-                for tr in rows[:20]:
-                    txt = tr.get_text(" ")
-                    if re.search(r"\d{2}/\d{2}/\d{4}", txt):
-                        score += 1
+                # Check up to 200 rows for dates, weight by total row count
+                date_rows = 0
+                for tr in rows[:200]:
+                    if re.search(r"\d{2}/\d{2}/\d{4}", tr.get_text(" ")):
+                        date_rows += 1
+                # Prefer tables with more date rows AND more total rows
+                score = date_rows * len(rows)
                 if score > best_score:
                     best_score = score
                     best_tbl = tbl
+                    best_rows = len(rows)
             if best_score > 0:
                 target = best_tbl
-                log.info("  Found table by date content, score=%d", best_score)
+                log.info("  Found table by date content, score=%d total_rows=%d",
+                         best_score, best_rows)
 
         if not target:
             log.info("  No results table found in HTML (len=%d)", len(html))

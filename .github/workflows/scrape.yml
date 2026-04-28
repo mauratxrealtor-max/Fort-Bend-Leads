@@ -68,7 +68,10 @@ jobs:
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add dashboard/records.json data/records.json data/ghl_export.csv data/parcel_compact.csv.gz || true
-          git diff --cached --quiet || git commit -m "chore: update records $(date -u +'%Y-%m-%d %H:%M UTC')"
+          # Force a commit even if records haven't changed by touching a timestamp file
+          echo "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" > dashboard/.last_run
+          git add dashboard/.last_run
+          git commit -m "chore: update records $(date -u +'%Y-%m-%d %H:%M UTC')" || true
           git push
 
       - name: Upload Pages artifact

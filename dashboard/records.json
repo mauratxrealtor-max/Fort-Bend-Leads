@@ -1,5 +1,5 @@
 {
-  "fetched_at": "2026-04-28T12:53:14.206415Z",
+  "fetched_at": "2026-04-28T13:04:00.036600Z",
   "source": "Fort Bend County Clerk + Fort Bend CAD",
   "date_range": {
     "from": "2026-01-28",
@@ -8,6 +8,55 @@
   "total": 20,
   "with_address": 9,
   "records": [
+    {
+      "doc_num": "2026041419",
+      "doc_type": "DEED",
+      "filed": "2026-04-28",
+      "cat": "OTHER",
+      "cat_label": "Deed",
+      "owner": "ZF SPV LLC",
+      "grantee": "PEREIRA JOSE",
+      "amount": "",
+      "legal": "LT 38 SHADY OAKS ESTATES Temp",
+      "clerk_url": "https://ccweb.co.fort-bend.tx.us/RealEstate/SearchResults.aspx?global_id=OPR665646320&type=dtl",
+      "prop_address": "2403 Pecan Wood LN",
+      "prop_city": "Rosenberg",
+      "prop_state": "TX",
+      "prop_zip": "77471",
+      "mail_address": "6303 Owensmouth AVE",
+      "mail_city": "Woodland Hills",
+      "mail_state": "CA",
+      "mail_zip": "91367",
+      "flags": [
+        "LLC / corp owner",
+        "New this week"
+      ],
+      "score": 60
+    },
+    {
+      "doc_num": "2026041420",
+      "doc_type": "DEED OF TRUST",
+      "filed": "2026-04-28",
+      "cat": "OTHER",
+      "cat_label": "Deed Of Trust",
+      "owner": "",
+      "grantee": "",
+      "amount": "",
+      "legal": "LT 38 SHADY OAKS ESTATES Temp",
+      "clerk_url": "https://ccweb.co.fort-bend.tx.us/RealEstate/SearchResults.aspx?global_id=OPR665646330&type=dtl",
+      "prop_address": "GeneralLegal DescriptionRelated DocumentsDocument DetailInstrument #:2026041420Multi Seq:0Document Date:Date Filed:04/28/2026 07:52:45 AMDocument Type:DEED OF TRUSTBook:Page:GF Number:Microfilm Code:Remarks:# Pages in Image:28Image:Grantors1Grantees1Combined LegalsSubdivision:SHADY OAKS ESTATESLot From:38Lot To:Block:Section:Survey Name:Acreage:Address:Town:Freeform Legal:Volume:Page:Mapcase:Slide:",
+      "prop_city": "",
+      "prop_state": "TX",
+      "prop_zip": "",
+      "mail_address": "",
+      "mail_city": "",
+      "mail_state": "TX",
+      "mail_zip": "",
+      "flags": [
+        "New this week"
+      ],
+      "score": 50
+    },
     {
       "doc_num": "2026041418",
       "doc_type": "DEED OF TRUST",
@@ -435,54 +484,6 @@
       "mail_city": "",
       "mail_state": "TX",
       "mail_zip": "",
-      "flags": [
-        "New this week"
-      ],
-      "score": 50
-    },
-    {
-      "doc_num": "2026041400",
-      "doc_type": "DEED",
-      "filed": "2026-04-27",
-      "cat": "OTHER",
-      "cat_label": "Deed",
-      "owner": "SALEM FATEN",
-      "grantee": "MUGHIS AHMAD MUHAMMAD",
-      "amount": "",
-      "legal": "LT L7 BLK 4 WEST OAKS VILLAGE Temp",
-      "clerk_url": "https://ccweb.co.fort-bend.tx.us/RealEstate/SearchResults.aspx?global_id=OPR665687370&type=dtl",
-      "prop_address": "GeneralLegal DescriptionRelated DocumentsDocument DetailInstrument #:2026041400Multi Seq:0Document Date:Date Filed:04/27/2026 05:10:34 PMDocument Type:DEEDBook:Page:GF Number:Microfilm Code:Remarks:# Pages in Image:3Image:Grantor1SALEMFATEN2ALZEINISSAGrantee1MUGHIS AHMADMUHAMMAD2MUGHISLUBNACombined LegalsSubdivision:WEST OAKS VILLAGELot From:L7Lot To:Block:4Section:Survey Name:Acreage:Address:Town:Freeform Legal:Volume:Page:Mapcase:Slide:",
-      "prop_city": "",
-      "prop_state": "TX",
-      "prop_zip": "",
-      "mail_address": "",
-      "mail_city": "",
-      "mail_state": "TX",
-      "mail_zip": "",
-      "flags": [
-        "New this week"
-      ],
-      "score": 50
-    },
-    {
-      "doc_num": "2026041399",
-      "doc_type": "TRANSFER",
-      "filed": "2026-04-27",
-      "cat": "OTHER",
-      "cat_label": "Transfer",
-      "owner": "BIRD ELISSA",
-      "grantee": "TAX LIEN LOAN SPV, LLC",
-      "amount": "",
-      "legal": "LT 14 BLK 2 AUTUMN RIDGE Temp",
-      "clerk_url": "https://ccweb.co.fort-bend.tx.us/RealEstate/SearchResults.aspx?global_id=OPR665688140&type=dtl",
-      "prop_address": "4026 Harwood DR",
-      "prop_city": "Sugar Land",
-      "prop_state": "TX",
-      "prop_zip": "77479",
-      "mail_address": "4026 Harwood DR",
-      "mail_city": "Sugar Land",
-      "mail_state": "TX",
-      "mail_zip": "77479",
       "flags": [
         "New this week"
       ],

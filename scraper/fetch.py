@@ -494,13 +494,26 @@ class ClerkScraper:
         }""")
         if full_count_result:
             log.info("  %s", full_count_result)
+            # Wait for navigation to fully settle after "get full count" click
+            await asyncio.sleep(3)
             try:
                 await page.wait_for_load_state("domcontentloaded", timeout=15_000)
             except Exception:
                 pass
             await asyncio.sleep(2)
-            pg_content = await page.content()
-            log.info("  After full count: len=%d", len(pg_content))
+            try:
+                pg_content = await page.content()
+                log.info("  After full count: len=%d", len(pg_content))
+            except Exception as e:
+                log.warning("  Could not read after full count (%s) — using original page", e)
+                # Re-navigate to results to get a stable page
+                try:
+                    await page.wait_for_load_state("domcontentloaded", timeout=10_000)
+                    await asyncio.sleep(2)
+                    pg_content = await page.content()
+                    log.info("  Re-read after wait: len=%d", len(pg_content))
+                except Exception:
+                    pass
 
         # ── Step 2: Collect all global_id detail URLs from results page ───────
         detail_urls = await page.evaluate(f"""() => {{

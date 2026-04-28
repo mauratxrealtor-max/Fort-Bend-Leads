@@ -396,115 +396,55 @@ class ClerkScraper:
     async def _targeted_search(self, page, code, label, search_term,
                                date_from, date_to) -> list[dict]:
         """
-        Search by doc type keyword using the DataTextEdit1 field.
-        Unlike broad search, this sets the search term so the portal
-        returns only matching doc types — but still navigates to SearchResults.
+        The portal only redirects to SearchResults when NO doc type filter is set.
+        So we use broad date-window searches across multiple sub-periods to get
+        more records, then filter client-side by doc type keyword.
+
+        For each 30-day chunk within the 90-day window, do a broad search and
+        keep only records matching this doc type.
         """
-        await page.goto(SEARCH_URL, timeout=20_000, wait_until="domcontentloaded")
-        await asyncio.sleep(0.5)
+        from datetime import datetime as _dt, timedelta as _td
+        import re as _re
 
-        # Check session still valid
-        html = await page.content()
-        if "session" in html.lower() and "expired" in html.lower():
-            await self._establish_session(page)
-            await page.goto(SEARCH_URL, timeout=20_000, wait_until="domcontentloaded")
-            await asyncio.sleep(0.5)
+        dt_from = _dt.strptime(date_from, "%m/%d/%Y")
+        dt_to   = _dt.strptime(date_to,   "%m/%d/%Y")
+        total_days = (dt_to - dt_from).days
 
-        # Fill dates
-        date_filled = await page.evaluate(f"""() => {{
-            const fromDate = new Date('{date_from.split('/')[2]}',
-                                      {int(date_from.split('/')[0])-1},
-                                      '{date_from.split('/')[1]}');
-            const toDate   = new Date('{date_to.split('/')[2]}',
-                                      {int(date_to.split('/')[0])-1},
-                                      '{date_to.split('/')[1]}');
-            const fromIds = ['cphNoMargin_f_ddcDateFiledFrom'];
-            const toIds   = ['cphNoMargin_f_ddcDateFiledTo'];
-            let ok = 0;
-            for (const id of fromIds) {{
-                try {{ const c = $find(id); if (c) {{ c.set_value(fromDate); ok++; break; }} }} catch(e) {{}}
-            }}
-            for (const id of toIds) {{
-                try {{ const c = $find(id); if (c) {{ c.set_value(toDate); ok++; break; }} }} catch(e) {{}}
-            }}
-            return ok;
-        }}""")
+        # Split into 30-day chunks so each search returns recent records for that window
+        chunk_days = 30
+        chunks = []
+        cursor = dt_from
+        while cursor < dt_to:
+            end = min(cursor + _td(days=chunk_days), dt_to)
+            chunks.append((cursor.strftime("%m/%d/%Y"), end.strftime("%m/%d/%Y")))
+            cursor = end
 
-        # Fill doc type search field
-        await page.evaluate(f"""() => {{
-            const el = document.getElementById('cphNoMargin_f_DataTextEdit1') ||
-                       document.querySelector('[name="cphNoMargin_f_DataTextEdit1"]');
-            if (el) {{
-                el.value = '{search_term}';
-                el.dispatchEvent(new Event('change', {{bubbles:true}}));
-            }}
-            const sel = document.querySelector('[id*="ddlSearchType"],[name*="ddlSearchType"]');
-            if (sel) sel.value = 'CONTAINS';
-        }}""")
+        log.info("  [%s] searching %d chunks of up to %d days for '%s'",
+                 code, len(chunks), chunk_days, search_term)
 
-        # Submit
-        await page.evaluate("""() => {
-            document.getElementById('__EVENTTARGET').value =
-                'ctl00$cphNoMargin$SearchButtons1$btnSearch';
-            document.getElementById('__EVENTARGUMENT').value = '0';
-            if (typeof WebForm_OnSubmit === 'function') WebForm_OnSubmit();
-            document.forms[0].submit();
-        }""")
+        all_recs = []
+        keywords = [kw.upper() for kw in DOC_TYPE_KEYWORDS.get(code, [search_term])]
+        keywords.append(search_term.upper())
 
-        try:
-            await page.wait_for_load_state("domcontentloaded", timeout=20_000)
-        except PWTimeout:
-            pass
-        await asyncio.sleep(2)
-
-        # Only process if we got SearchResults
-        if "SearchResults" not in page.url:
-            log.debug("  [%s] stayed on SearchEntry — no results", code)
-            return []
-
-        try:
-            pg_content = await page.content()
-        except Exception:
-            await asyncio.sleep(2)
-            pg_content = await page.content()
-
-        # Click "get full count" to load all records for this type
-        full_count = await page.evaluate("""() => {
-            const fc = Array.from(document.querySelectorAll('a')).find(a =>
-                a.textContent.trim().toLowerCase().includes('get full count'));
-            if (fc) { fc.click(); return true; }
-            return false;
-        }""")
-        if full_count:
-            await asyncio.sleep(3)
+        for chunk_from, chunk_to in chunks:
             try:
-                await page.wait_for_load_state("domcontentloaded", timeout=10_000)
-            except Exception:
-                pass
-            await asyncio.sleep(1)
-            try:
-                pg_content = await page.content()
-            except Exception:
-                await asyncio.sleep(2)
-                pg_content = await page.content()
+                recs = await self._playwright_search(page, None, None, chunk_from, chunk_to)
+                # Filter to matching doc types
+                matched = []
+                for r in recs:
+                    dt_upper = (r.get("doc_type") or "").upper()
+                    if any(kw in dt_upper for kw in keywords):
+                        r["cat"]       = code
+                        r["cat_label"] = label
+                        matched.append(r)
+                if matched:
+                    log.info("  [%s] %s→%s: %d/%d matched",
+                             code, chunk_from, chunk_to, len(matched), len(recs))
+                all_recs.extend(matched)
+            except Exception as e:
+                log.debug("  [%s] chunk %s error: %s", code, chunk_from, e)
 
-        # Try full-count text parser first (handles concatenated cell format)
-        if len(pg_content) > 400_000:
-            from bs4 import BeautifulSoup as _BS
-            import re as _re
-            _soup = _BS(pg_content, "lxml")
-            for _td in _soup.find_all(["td", "th"]):
-                _txt = _td.get_text(" ")
-                if len(_re.findall(r'View\s+20\d{8}', _txt)) >= 3:
-                    recs = self._parse_full_count_text(_txt, code, label)
-                    if recs:
-                        log.info("  [%s] full-count parser: %d records", code, len(recs))
-                        return recs
-                    break
-
-        # Fall back to standard table parser
-        recs = self._parse_table(pg_content, code, label, True)
-        return recs
+        return all_recs
 
     async def _playwright_search(self, page, code, label, date_from, date_to):
         """

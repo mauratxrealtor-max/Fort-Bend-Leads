@@ -474,9 +474,10 @@ footer {
     <option value="PRO">Probate</option>
     <option value="NOC">Notice of Commencement</option>
     <option value="RELLP">Release LP</option>
+    <option value="OTHER">Other</option>
   </select>
   <select id="filter-score" class="ctrl-input filter-select" onchange="applyFilters()">
-    <option value="">All Scores</option>
+    <option value="0">All Scores</option>
     <option value="70">Score ≥ 70 (Hot)</option>
     <option value="50">Score ≥ 50</option>
     <option value="0">All</option>
@@ -499,7 +500,7 @@ footer {
     <h3>No Records Yet</h3>
     <p>Run the GitHub Actions workflow to populate leads.</p>
   </div>
-  <div class="table-wrap">
+  <div class="table-wrap" id="table-wrap">
     <table id="records-table">
       <thead>
         <tr>
@@ -563,365 +564,204 @@ footer {
 </div><!-- #app -->
 
 <script>
-// ── State ────────────────────────────────────────────────
-let ALL_RECORDS  = [];
-let FILTERED     = [];
-let SORT_COL     = 'score';
-let SORT_DIR     = 'desc';
+var ALL = [];
+var SHOW = [];
+var SORT_COL = 'score';
+var SORT_DIR = 'desc';
 
-// ── Boot ─────────────────────────────────────────────────
-(async function init() {
-  const debug = (msg) => {
-    console.log(msg);
-    const el = document.getElementById('debug-panel');
-    if (el) el.innerHTML += escHtml(msg) + '<br>';
-  };
-
-  try {
-    const url = 'records.json?' + Date.now();
-    debug('Fetching: ' + url);
-    const r = await fetch(url);
-    debug('HTTP status: ' + r.status + ' ' + r.statusText);
-    if (!r.ok) throw new Error('HTTP ' + r.status);
-
-    const text = await r.text();
-    debug('Response length: ' + text.length + ' chars');
-    debug('First 100 chars: ' + text.slice(0,100));
-
-    const data = JSON.parse(text);
-    debug('Parsed OK. total=' + data.total + ' records_array=' + (data.records||[]).length);
-
-    ALL_RECORDS = (data.records || []).map(r => ({
-      ...r,
-      score: parseInt(Array.isArray(r.score) ? r.score[0] : r.score) || 0,
-      flags: Array.isArray(r.flags) ? r.flags
-           : (typeof r.flags === 'number' ? []
-           : (typeof r.flags === 'string' ? r.flags.split(',').filter(Boolean) : [])),
-      cat:   r.cat || 'OTHER',
-      filed: r.filed || '',
-    }));
-
-    debug('ALL_RECORDS after normalize: ' + ALL_RECORDS.length);
-    if (ALL_RECORDS.length > 0) {
-      const s = ALL_RECORDS[0];
-      debug('First: doc_num=' + s.doc_num + ' score=' + s.score + ' flags=' + JSON.stringify(s.flags) + ' cat=' + s.cat);
-    }
-
-    document.getElementById('fetch-time').textContent =
-      data.fetched_at
-        ? 'Updated ' + new Date(data.fetched_at).toLocaleString()
-        : 'Not yet run';
-    const dr = data.date_range || {};
-    document.getElementById('date-range').textContent =
-      (dr.from && dr.to) ? dr.from + ' → ' + dr.to : '7-day window';
-    document.getElementById('footer-ts').textContent =
-      'Fetched: ' + (data.fetched_at || 'pending');
-
-    buildStats();
-    applyFilters();
-    debug('FILTERED after applyFilters: ' + FILTERED.length);
-    buildCharts();
-
-
-
-  } catch(e) {
-    debug('ERROR: ' + e.message + ' | stack: ' + e.stack);
-    const dp = document.getElementById('debug-panel');
-    if (dp) dp.style.display = 'block';
-    document.getElementById('empty-state').style.display = 'block';
-    document.querySelector('.table-wrap').style.display = 'none';
-  }
-})();
-
-// ── Stats ────────────────────────────────────────────────
-function buildStats() {
-  const r = ALL_RECORDS;
-  document.getElementById('s-total').textContent = r.length;
-  document.getElementById('s-high').textContent  = r.filter(x=>(parseInt(Array.isArray(x.score)?x.score[0]:x.score)||0)>=70).length;
-  document.getElementById('s-addr').textContent  = r.filter(x=>x.prop_address||x.mail_address).length;
-  document.getElementById('s-fc').textContent    = r.filter(x=>['LP','NOFC'].includes(x.cat)).length;
-  document.getElementById('s-jud').textContent   = r.filter(x=>['JUD','CCJ','DRJUD'].includes(x.cat)).length;
-  document.getElementById('s-tax').textContent   = r.filter(x=>['LNCORPTX','LNIRS','LNFED','TAXDEED'].includes(x.cat)).length;
+function safe(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function getScore(r) {
+  var s = r.score;
+  if (Array.isArray(s)) s = s[0];
+  return parseInt(s) || 0;
+}
+function getFlags(r) {
+  var f = r.flags;
+  if (Array.isArray(f)) return f;
+  if (typeof f === 'number') return [];
+  if (typeof f === 'string' && f) return f.split(',').filter(Boolean);
+  return [];
+}
+function getAddr(r) {
+  var a = r.prop_address || '';
+  if (a.length > 80 || a.indexOf('General') >= 0 || a.indexOf('Document') >= 0) return '';
+  return a;
+}
+function fmtAmt(a) {
+  var v = parseFloat(String(a||'').replace(/[^0-9.]/g,'')) || 0;
+  if (!v) return '';
+  return '$' + v.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0});
 }
 
-// ── Filtering ─────────────────────────────────────────────
-function applyFilters() {
-  const q     = document.getElementById('search-box').value.toLowerCase();
-  const type  = document.getElementById('filter-type').value;
-  const score = parseInt(document.getElementById('filter-score').value) || 0;
-  const addr  = document.getElementById('filter-addr').value;
+fetch('records.json?' + Date.now())
+  .then(function(r){ return r.json(); })
+  .then(function(data) {
+    ALL = data.records || [];
+    document.getElementById('fetch-time').textContent =
+      data.fetched_at ? 'Updated ' + new Date(data.fetched_at).toLocaleString() : 'Not yet run';
+    var dr = data.date_range || {};
+    document.getElementById('date-range').textContent =
+      (dr.from && dr.to) ? dr.from + ' → ' + dr.to : '—';
+    document.getElementById('footer-ts').textContent = 'Fetched: ' + (data.fetched_at||'—');
+    buildStats(); applyFilters(); buildCharts();
+  })
+  .catch(function(e){
+    console.error('Load error:',e);
+    document.getElementById('empty-state').style.display='block';
+    document.getElementById('table-wrap').style.display='none';
+  });
 
-  FILTERED = ALL_RECORDS.filter(r => {
-    const search_str = [r.owner, r.prop_address, r.doc_num, r.grantee, r.legal].join(' ').toLowerCase();
-    if (q && !search_str.includes(q)) return false;
-    if (type && r.cat !== type) return false;
-    // Normalize score — could be int, string, or list
-    const rec_score = parseInt(Array.isArray(r.score) ? r.score[0] : r.score) || 0;
-    if (score && rec_score < score) return false;
-    if (addr === '1' && !r.prop_address && !r.mail_address) return false;
-    if (addr === '0' && (r.prop_address || r.mail_address)) return false;
+function buildStats() {
+  document.getElementById('s-total').textContent = ALL.length;
+  document.getElementById('s-high').textContent  = ALL.filter(function(r){return getScore(r)>=70;}).length;
+  document.getElementById('s-addr').textContent  = ALL.filter(function(r){return r.prop_address||r.mail_address;}).length;
+  document.getElementById('s-fc').textContent    = ALL.filter(function(r){return r.cat==='LP'||r.cat==='NOFC';}).length;
+  document.getElementById('s-jud').textContent   = ALL.filter(function(r){return r.cat==='JUD'||r.cat==='CCJ'||r.cat==='DRJUD';}).length;
+  document.getElementById('s-tax').textContent   = ALL.filter(function(r){return r.cat==='LNCORPTX'||r.cat==='LNIRS'||r.cat==='LNFED'||r.cat==='TAXDEED';}).length;
+}
+
+function applyFilters() {
+  var q    = (document.getElementById('search-box').value||'').toLowerCase();
+  var type = document.getElementById('filter-type').value;
+  var sc   = parseInt(document.getElementById('filter-score').value)||0;
+  var addr = document.getElementById('filter-addr').value;
+  SHOW = ALL.filter(function(r) {
+    if (q && [r.owner,r.prop_address,r.doc_num,r.grantee,r.legal].join(' ').toLowerCase().indexOf(q)<0) return false;
+    if (type && r.cat!==type) return false;
+    if (sc && getScore(r)<sc) return false;
+    if (addr==='1' && !r.prop_address && !r.mail_address) return false;
+    if (addr==='0' && (r.prop_address||r.mail_address)) return false;
     return true;
   });
-
-  // Sort
-  FILTERED.sort((a,b) => {
-    let av = a[SORT_COL]||0, bv = b[SORT_COL]||0;
-    if (SORT_COL === 'amount') {
-      av = parseFloat(String(av).replace(/[^0-9.]/g,''))||0;
-      bv = parseFloat(String(bv).replace(/[^0-9.]/g,''))||0;
-    }
-    if (av < bv) return SORT_DIR==='asc'?-1:1;
-    if (av > bv) return SORT_DIR==='asc'?1:-1;
+  SHOW.sort(function(a,b){
+    var av = SORT_COL==='score'?getScore(a):(a[SORT_COL]||'');
+    var bv = SORT_COL==='score'?getScore(b):(b[SORT_COL]||'');
+    if(av<bv) return SORT_DIR==='asc'?-1:1;
+    if(av>bv) return SORT_DIR==='asc'?1:-1;
     return 0;
   });
-
-  document.getElementById('result-count').textContent = `${FILTERED.length} record${FILTERED.length!==1?'s':''}`;
+  document.getElementById('result-count').textContent = SHOW.length+' record'+(SHOW.length!==1?'s':'');
   renderTable();
 }
 
 function sortBy(col) {
-  if (SORT_COL === col) SORT_DIR = SORT_DIR === 'asc' ? 'desc' : 'asc';
-  else { SORT_COL = col; SORT_DIR = 'desc'; }
-  document.querySelectorAll('th').forEach(th => {
-    th.classList.remove('sort-asc','sort-desc');
-    if (th.dataset.col === col) th.classList.add('sort-' + SORT_DIR);
-  });
+  if(SORT_COL===col) SORT_DIR=SORT_DIR==='asc'?'desc':'asc';
+  else{SORT_COL=col;SORT_DIR='desc';}
   applyFilters();
 }
 
-// ── Table render ─────────────────────────────────────────
 function renderTable() {
-  const tbody = document.getElementById('table-body');
-  const es    = document.getElementById('empty-state');
-  const tw    = document.querySelector('.table-wrap');
-
-  if (FILTERED.length === 0) {
-    es.style.display  = 'block';
-    tw.style.display  = 'none';
-    return;
+  var tbody = document.getElementById('table-body');
+  var es    = document.getElementById('empty-state');
+  var tw    = document.getElementById('table-wrap');
+  if (SHOW.length===0) { es.style.display='block'; tw.style.display='none'; return; }
+  es.style.display='none'; tw.style.display='block';
+  var html = '';
+  for(var i=0;i<SHOW.length;i++){
+    var r=SHOW[i], sc=getScore(r), flags=getFlags(r), addr=getAddr(r);
+    var scCls=sc>=70?'score-hi':sc>=50?'score-mid':'score-lo';
+    var hot=['Lis pendens','Pre-foreclosure','Judgment lien','Tax lien'];
+    var addrHtml=addr
+      ?'<div class="addr-main">'+safe(addr)+'</div><div class="addr-sub">'+safe([r.prop_city,r.prop_state,r.prop_zip].filter(Boolean).join(', '))+'</div>'
+      :'<span class="no-addr">no address</span>';
+    var flagsHtml='';
+    for(var fi=0;fi<Math.min(flags.length,3);fi++)
+      flagsHtml+='<span class="flag-tag'+(hot.indexOf(flags[fi])>=0?' hot':'')+'" >'+safe(String(flags[fi]))+'</span>';
+    html+='<tr onclick="openModal('+i+')">'+
+      '<td><span class="score-badge '+scCls+'">'+sc+'</span></td>'+
+      '<td><span class="chip chip-'+safe(r.cat||'OTHER')+'">'+safe(r.cat||'—')+'</span></td>'+
+      '<td style="font-family:var(--mono)">'+safe(r.filed||'—')+'</td>'+
+      '<td>'+safe((r.owner||'Unknown').slice(0,50))+'</td>'+
+      '<td>'+addrHtml+'</td>'+
+      '<td style="font-family:var(--mono)">'+(fmtAmt(r.amount)||'—')+'</td>'+
+      '<td><div class="flags">'+flagsHtml+'</div></td>'+
+      '<td style="font-family:var(--mono);color:var(--muted);font-size:11px">'+safe(r.doc_num||'—')+'</td>'+
+      '</tr>';
   }
-  es.style.display  = 'none';
-  tw.style.display  = 'block';
-
-  const rows = [];
-  FILTERED.forEach((r,i) => {
-    try {
-      const sc    = parseInt(Array.isArray(r.score)?r.score[0]:r.score)||0;
-      const scCls = sc>=70?'score-hi':sc>=50?'score-mid':'score-lo';
-      const flags = Array.isArray(r.flags) ? r.flags : [];
-      const hotFlags = ['Lis pendens','Pre-foreclosure','Judgment lien','Tax lien'];
-
-      // Sanitize address — truncate if junk from detail page
-      const propAddr = (r.prop_address && r.prop_address.length < 80) ? r.prop_address : '';
-      const addrHtml = propAddr
-        ? `<div class="addr-main">${escHtml(propAddr)}</div>
-           <div class="addr-sub">${escHtml([r.prop_city,r.prop_state,r.prop_zip].filter(Boolean).join(', '))}</div>`
-        : `<span class="no-addr">no address</span>`;
-
-      const amt = r.amount ? `<span class="amount${amtVal(r.amount)>100000?' big':''}">${fmtAmt(r.amount)}</span>` : '—';
-
-      const flagsHtml = flags.slice(0,3).map(f =>
-        `<span class="flag-tag${hotFlags.includes(f)?' hot':''}">${escHtml(String(f))}</span>`
-      ).join('');
-
-      rows.push(`<tr onclick="openModal(${i})" style="animation-delay:${Math.min(i*20,300)}ms">
-        <td><span class="score-badge ${scCls}">${sc}</span></td>
-        <td><span class="chip chip-${escHtml(r.cat||'OTHER')}">${escHtml(r.cat||'—')}</span></td>
-        <td class="mono">${escHtml(r.filed||'—')}</td>
-        <td>${escHtml((r.owner||'Unknown').slice(0,60))}</td>
-        <td>${addrHtml}</td>
-        <td class="mono">${amt}</td>
-        <td><div class="flags">${flagsHtml}</div></td>
-        <td class="mono" style="color:var(--muted);font-size:11px">${escHtml(r.doc_num||'—')}</td>
-      </tr>`);
-    } catch(err) {
-      console.warn('Row render error at index', i, err);
-      rows.push(`<tr><td colspan="8" style="color:var(--muted);font-size:11px">Row ${i+1} render error</td></tr>`);
-    }
-  });
-  tbody.innerHTML = rows.join('');
+  tbody.innerHTML=html;
 }
 
-// ── Modal ─────────────────────────────────────────────────
-function openModal(idx) {
-  const r  = FILTERED[idx];
-  const sc = r.score||0;
-  const scCls = sc>=70?'score-hi':sc>=50?'score-mid':'score-lo';
-  const ringColor = sc>=70?'var(--accent)':sc>=50?'var(--accent2)':'var(--accent3)';
-
-  document.getElementById('modal-content').innerHTML = `
-    <div class="modal-doctype">${r.cat_label||r.cat||'Unknown Type'} · ${r.doc_type||''}</div>
-    <div class="modal-owner">${escHtml(r.owner||'Unknown Owner')}</div>
-    <div class="modal-docnum">Doc # ${escHtml(r.doc_num||'—')} · Filed ${r.filed||'—'}</div>
-
-    <div class="score-ring">
-      <div class="ring-outer score-badge ${scCls}" style="width:56px;height:56px;font-size:26px;">${sc}</div>
-      <div>
-        <div style="font-size:11px;color:var(--muted)">Seller Score</div>
-        <div style="font-size:12px;color:var(--text)">${sc>=70?'🔥 Hot lead':sc>=50?'⚠️ Warm lead':'ℹ️ Watch'}</div>
-      </div>
-    </div>
-
-    <div class="modal-section">
-      <h4>Document</h4>
-      <div class="modal-grid">
-        <div class="modal-field"><label>Grantor (Owner)</label><span>${escHtml(r.owner||'—')}</span></div>
-        <div class="modal-field"><label>Grantee</label><span>${escHtml(r.grantee||'—')}</span></div>
-        <div class="modal-field"><label>Amount</label><span>${fmtAmt(r.amount)||'—'}</span></div>
-        <div class="modal-field"><label>Legal Description</label><span style="font-size:11px">${escHtml(r.legal||'—')}</span></div>
-      </div>
-    </div>
-
-    <div class="modal-section">
-      <h4>Addresses</h4>
-      <div class="modal-grid">
-        <div class="modal-field">
-          <label>Property Address</label>
-          <span>${r.prop_address ? `${r.prop_address}, ${r.prop_city} ${r.prop_state} ${r.prop_zip}` : '—'}</span>
-        </div>
-        <div class="modal-field">
-          <label>Mailing Address</label>
-          <span>${r.mail_address ? `${r.mail_address}, ${r.mail_city} ${r.mail_state} ${r.mail_zip}` : '—'}</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="modal-section">
-      <h4>Motivated Seller Flags</h4>
-      <div class="modal-flags">${(r.flags||[]).map(f=>`<span class="flag-tag hot">${f}</span>`).join('')||'<span style="color:var(--muted)">None</span>'}</div>
-    </div>
-
-    ${r.clerk_url ? `
-    <div class="modal-section">
-      <h4>Source</h4>
-      <a href="${escHtml(r.clerk_url)}" target="_blank" rel="noopener" class="modal-link">
-        🔗 View on County Clerk Portal
-      </a>
-    </div>` : ''}
-  `;
+function openModal(idx){
+  var r=SHOW[idx],sc=getScore(r),flags=getFlags(r),addr=getAddr(r);
+  var scCls=sc>=70?'score-hi':sc>=50?'score-mid':'score-lo';
+  document.getElementById('modal-content').innerHTML=
+    '<div class="modal-doctype">'+safe(r.cat_label||r.cat||'—')+' · '+safe(r.doc_type||'')+'</div>'+
+    '<div class="modal-owner">'+safe(r.owner||'Unknown')+'</div>'+
+    '<div class="modal-docnum">Doc # '+safe(r.doc_num||'—')+' · Filed '+safe(r.filed||'—')+'</div>'+
+    '<div class="score-ring"><div class="score-badge '+scCls+'" style="width:56px;height:56px;font-size:26px">'+sc+'</div>'+
+    '<div><div style="font-size:11px;color:var(--muted)">Seller Score</div>'+
+    '<div style="font-size:12px">'+(sc>=70?'🔥 Hot lead':sc>=50?'⚠️ Warm lead':'ℹ️ Watch')+'</div></div></div>'+
+    '<div class="modal-section"><h4>Document</h4><div class="modal-grid">'+
+    '<div class="modal-field"><label>Grantor</label><span>'+safe(r.owner||'—')+'</span></div>'+
+    '<div class="modal-field"><label>Grantee</label><span>'+safe(r.grantee||'—')+'</span></div>'+
+    '<div class="modal-field"><label>Amount</label><span>'+(fmtAmt(r.amount)||'—')+'</span></div>'+
+    '<div class="modal-field"><label>Legal</label><span style="font-size:11px">'+safe((r.legal||'—').slice(0,80))+'</span></div>'+
+    '</div></div>'+
+    '<div class="modal-section"><h4>Addresses</h4><div class="modal-grid">'+
+    '<div class="modal-field"><label>Property</label><span>'+(addr?safe(addr+', '+r.prop_city+' '+r.prop_state+' '+r.prop_zip):'—')+'</span></div>'+
+    '<div class="modal-field"><label>Mailing</label><span>'+(r.mail_address?safe(r.mail_address+', '+r.mail_city+' '+r.mail_state+' '+r.mail_zip):'—')+'</span></div>'+
+    '</div></div>'+
+    '<div class="modal-section"><h4>Flags</h4><div class="modal-flags">'+
+    (flags.length?flags.map(function(f){return '<span class="flag-tag hot">'+safe(f)+'</span>';}).join(''):'<span style="color:var(--muted)">None</span>')+
+    '</div></div>'+
+    (r.clerk_url?'<div class="modal-section"><h4>Source</h4><a href="'+safe(r.clerk_url)+'" target="_blank" rel="noopener" class="modal-link">🔗 View on County Clerk Portal</a></div>':'');
   document.getElementById('modal-overlay').classList.add('open');
 }
+function closeModal(){ document.getElementById('modal-overlay').classList.remove('open'); }
+document.addEventListener('keydown',function(e){if(e.key==='Escape')closeModal();});
 
-function closeModal(e) {
-  if (!e || e.target.id === 'modal-overlay' || e.target.classList.contains('modal-close')) {
-    document.getElementById('modal-overlay').classList.remove('open');
-  }
-}
-document.addEventListener('keydown', e => { if (e.key==='Escape') closeModal({target:{id:'modal-overlay'}}); });
-
-// ── Charts ─────────────────────────────────────────────
-function buildCharts() {
-  // Type bars
-  const typeCounts = {};
-  ALL_RECORDS.forEach(r => typeCounts[r.cat] = (typeCounts[r.cat]||0)+1);
-  const sortedTypes = Object.entries(typeCounts).sort((a,b)=>b[1]-a[1]).slice(0,10);
-  const maxT = Math.max(...sortedTypes.map(x=>x[1]),1);
-  document.getElementById('type-bars').innerHTML = sortedTypes.map(([k,v])=>`
-    <div class="bar-row">
-      <div class="bar-label">${k}</div>
-      <div class="bar-track">
-        <div class="bar-fill" style="width:${(v/maxT*100).toFixed(1)}%">${v}</div>
-      </div>
-    </div>`).join('');
-
-  // Score distribution (10 buckets)
-  const buckets = Array(10).fill(0);
-  ALL_RECORDS.forEach(r => {
-    const b = Math.min(Math.floor((r.score||0)/10), 9);
-    buckets[b]++;
-  });
-  const maxB = Math.max(...buckets,1);
-  document.getElementById('score-dist').innerHTML = buckets.map((v,i)=>`
-    <div class="score-bar"
-         style="height:${(v/maxB*100).toFixed(1)}%;
-                background:${i>=7?'var(--accent)':i>=5?'var(--accent2)':'var(--accent3)'}"
-         data-tip="${i*10}–${i*10+9}: ${v}">
-    </div>`).join('');
-
-  // Date activity
-  const dateCounts = {};
-  ALL_RECORDS.forEach(r => {
-    if(r.filed) dateCounts[r.filed] = (dateCounts[r.filed]||0)+1;
-  });
-  const sortedDates = Object.entries(dateCounts).sort((a,b)=>a[0]<b[0]?-1:1).slice(-7);
-  const maxD = Math.max(...sortedDates.map(x=>x[1]),1);
-  document.getElementById('date-bars').innerHTML = sortedDates.map(([d,v])=>`
-    <div class="bar-row">
-      <div class="bar-label">${d.slice(5)}</div>
-      <div class="bar-track">
-        <div class="bar-fill" style="width:${(v/maxD*100).toFixed(1)}%;background:var(--accent4)">${v}</div>
-      </div>
-    </div>`).join('');
-
-  // Flag bars
-  const flagCounts = {};
-  ALL_RECORDS.forEach(r => (r.flags||[]).forEach(f => flagCounts[f]=(flagCounts[f]||0)+1));
-  const sortedFlags = Object.entries(flagCounts).sort((a,b)=>b[1]-a[1]).slice(0,8);
-  const maxF = Math.max(...sortedFlags.map(x=>x[1]),1);
-  document.getElementById('flag-bars').innerHTML = sortedFlags.map(([f,v])=>`
-    <div class="bar-row">
-      <div class="bar-label" style="font-size:9px">${f}</div>
-      <div class="bar-track">
-        <div class="bar-fill" style="width:${(v/maxF*100).toFixed(1)}%;background:var(--accent2)">${v}</div>
-      </div>
-    </div>`).join('');
+function buildCharts(){
+  var tc={};
+  ALL.forEach(function(r){tc[r.cat]=(tc[r.cat]||0)+1;});
+  var types=Object.keys(tc).sort(function(a,b){return tc[b]-tc[a];}).slice(0,10);
+  var maxT=Math.max.apply(null,types.map(function(k){return tc[k];}));
+  document.getElementById('type-bars').innerHTML=types.map(function(k){
+    return '<div class="bar-row"><div class="bar-label">'+safe(k)+'</div>'+
+           '<div class="bar-track"><div class="bar-fill" style="width:'+(tc[k]/maxT*100).toFixed(1)+'%">'+tc[k]+'</div></div></div>';
+  }).join('');
+  var dc={};
+  ALL.forEach(function(r){if(r.filed)dc[r.filed]=(dc[r.filed]||0)+1;});
+  var dates=Object.keys(dc).sort().slice(-14);
+  var maxD=Math.max.apply(null,dates.map(function(d){return dc[d];}));
+  document.getElementById('date-bars').innerHTML=dates.map(function(d){
+    return '<div class="bar-row"><div class="bar-label">'+d.slice(5)+'</div>'+
+           '<div class="bar-track"><div class="bar-fill" style="width:'+(dc[d]/maxD*100).toFixed(1)+'%;background:var(--accent4)">'+dc[d]+'</div></div></div>';
+  }).join('');
 }
 
-// ── Panel switch ─────────────────────────────────────────
-function showPanel(name) {
-  document.getElementById('table-panel').style.display = name==='table' ? 'block' : 'none';
-  document.getElementById('chart-panel').style.display = name==='chart' ? 'block' : 'none';
-  document.querySelectorAll('.tab').forEach((t,i)=>{
-    t.classList.toggle('active', ['table','chart'][i]===name);
-  });
+function showPanel(name){
+  document.getElementById('table-panel').style.display=name==='table'?'block':'none';
+  document.getElementById('chart-panel').style.display=name==='chart'?'block':'none';
+  document.querySelectorAll('.tab').forEach(function(t,i){t.classList.toggle('active',['table','chart'][i]===name);});
 }
 
-// ── GHL CSV export ───────────────────────────────────────
-function exportGHL() {
-  const cols = ['First Name','Last Name','Mailing Address','Mailing City','Mailing State','Mailing Zip',
-                'Property Address','Property City','Property State','Property Zip',
-                'Lead Type','Document Type','Date Filed','Document Number',
-                'Amount/Debt Owed','Seller Score','Motivated Seller Flags','Source','Public Records URL'];
-  const rows = [cols.join(',')];
-  FILTERED.forEach(r => {
-    const parts = (r.owner||'').replace(',',' ').split(/\s+/);
-    const row = [
-      parts[0]||'', parts.slice(1).join(' ')||'',
-      r.mail_address||'', r.mail_city||'', r.mail_state||'TX', r.mail_zip||'',
-      r.prop_address||'', r.prop_city||'', r.prop_state||'TX', r.prop_zip||'',
-      r.cat_label||'', r.doc_type||'', r.filed||'', r.doc_num||'',
-      r.amount||'', r.score||0,
-      (r.flags||[]).join('; '),
-      'Harris County Clerk / Fort Bend CAD',
-      r.clerk_url||''
-    ].map(v => `"${String(v).replace(/"/g,'""')}"`);
+function exportGHL(){
+  var cols=['First Name','Last Name','Mailing Address','Mailing City','Mailing State','Mailing Zip',
+            'Property Address','Property City','Property State','Property Zip',
+            'Lead Type','Document Type','Date Filed','Document Number',
+            'Amount','Seller Score','Flags','Source','URL'];
+  var rows=[cols.join(',')];
+  SHOW.forEach(function(r){
+    var parts=(r.owner||'').replace(',',' ').split(/\s+/);
+    var row=[parts[0]||'',parts.slice(1).join(' ')||'',
+      r.mail_address||'',r.mail_city||'',r.mail_state||'TX',r.mail_zip||'',
+      getAddr(r)||'',r.prop_city||'',r.prop_state||'TX',r.prop_zip||'',
+      r.cat_label||'',r.doc_type||'',r.filed||'',r.doc_num||'',
+      r.amount||'',getScore(r),getFlags(r).join('; '),'Fort Bend County Clerk',r.clerk_url||''
+    ].map(function(v){return '"'+String(v).replace(/"/g,'""')+'"';});
     rows.push(row.join(','));
   });
-  const csv = rows.join('\n');
-  navigator.clipboard.writeText(csv).catch(()=>{});
-
-  // Also trigger download
-  const blob = new Blob([csv], {type:'text/csv'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `motivated_sellers_${new Date().toISOString().slice(0,10)}.csv`;
+  var csv=rows.join('\n');
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download='motivated_sellers_'+new Date().toISOString().slice(0,10)+'.csv';
   a.click();
-
-  const t = document.getElementById('toast');
-  t.textContent = `✓ ${FILTERED.length} records exported`;
+  var t=document.getElementById('toast');
+  t.textContent='✓ '+SHOW.length+' records exported';
   t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'), 2800);
-}
-
-// ── Helpers ───────────────────────────────────────────────
-function escHtml(s) {
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-function amtVal(a) { return parseFloat(String(a||0).replace(/[^0-9.]/g,''))||0; }
-function fmtAmt(a) {
-  const v = amtVal(a);
-  if (!v) return '';
-  return '$' + v.toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:0});
+  setTimeout(function(){t.classList.remove('show');},2800);
 }
 </script>
 </body>

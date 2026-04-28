@@ -632,18 +632,37 @@ class ClerkScraper:
         }}""")
         log.info("  Found %d document detail URLs", len(detail_urls))
 
-        # ── Step 3: Parse the summary table first (gets 20 rows fast) ─────────
+        # ── Step 3: Parse results — try full-count text parser first ──────────
         all_recs = []
-        page_num = 1
-        while True:
-            html = pg_content  # updated after each page navigation
-            recs = self._parse_table(html, code or "OTHER", label or "All", bool(code))
-            all_recs.extend(recs)
-            if not recs and page_num > 1:
-                break
 
-            # Fort Bend Infragistics grid pager — find page number links/inputs
-            next_result = await page.evaluate(f"""() => {{
+        # Extract the large concatenated text cells (from the full-count page)
+        # These contain all records in flat text format
+        if len(pg_content) > 400_000:  # only on full-count pages
+            from bs4 import BeautifulSoup as _BS
+            _soup = _BS(pg_content, "lxml")
+            for _td in _soup.find_all(["td", "th"]):
+                _txt = _td.get_text(" ")
+                # Look for cells containing 10+ "View 20xxxxxxxx" patterns
+                if len(re.findall(r'View\s+20\d{8}', _txt)) >= 5:
+                    log.info("  Parsing full-count text cell (%d chars, %d records)",
+                             len(_txt), len(re.findall(r'View\s+20\d{8}', _txt)))
+                    all_recs = self._parse_full_count_text(
+                        _txt, code or "OTHER", label or "All")
+                    log.info("  Full-count parse: %d records", len(all_recs))
+                    break
+
+        # Fall back to standard table parser if full-count parse found nothing
+        if not all_recs:
+            page_num = 1
+            while True:
+                html = pg_content  # updated after each page navigation
+                recs = self._parse_table(html, code or "OTHER", label or "All", bool(code))
+                all_recs.extend(recs)
+                if not recs and page_num > 1:
+                    break
+
+                # Fort Bend Infragistics grid pager — find page number links/inputs
+                next_result = await page.evaluate(f"""() => {{
                 const nextPageNum = {page_num + 1};
 
                 // Strategy 1: find page number link (e.g. "2", "3"...)
@@ -693,21 +712,21 @@ class ClerkScraper:
                 return null;
             }}""")
 
-            if not next_result:
-                log.info("  No next page found after page %d — done", page_num)
-                break
+                if not next_result:
+                    log.info("  No next page found after page %d — done", page_num)
+                    break
 
-            log.info("  Paginating to page %d (%s)…", page_num + 1, next_result)
-            try:
-                await page.wait_for_load_state("domcontentloaded", timeout=20_000)
-            except Exception:
-                pass
-            await asyncio.sleep(1.5)
-            pg_content = await page.content()
-            page_num += 1
-            if page_num > 500:
-                log.warning("  Hit 500-page cap, stopping")
-                break
+                log.info("  Paginating to page %d (%s)…", page_num + 1, next_result)
+                try:
+                    await page.wait_for_load_state("domcontentloaded", timeout=20_000)
+                except Exception:
+                    pass
+                await asyncio.sleep(1.5)
+                pg_content = await page.content()
+                page_num += 1
+                if page_num > 500:
+                    log.warning("  Hit 500-page cap, stopping")
+                    break
 
         # ── Step 4: Enrich records from detail pages ───────────────────────
         # Map doc_num -> record for quick lookup
@@ -1279,6 +1298,112 @@ class ClerkScraper:
         return matched
 
     # ── HTML table parser ─────────────────────────────────────────────────────
+    def _parse_full_count_text(self, big_text: str, code: str,
+                                label: str) -> list[dict]:
+        """
+        After "get full count", all 20 records are concatenated into one
+        table cell as flat text. Parse them with regex.
+
+        Format: "N View DOCNUM DOCNUM DOCNUM MM/DD/YYYY DOCTYPE DOCTYPE
+                 [R] OWNER [E] GRANTEE R OWNER GRANTEE LEGAL Temp Temp E OPR_ID ..."
+        """
+        today = datetime.now()
+        recs  = []
+
+        # Split on each "N View 20xxxxxxxxxx" pattern
+        SPLIT_RE = re.compile(r'(?=\d{1,4}\s+View\s+20\d{8}\s)')
+        parts = SPLIT_RE.split(big_text)
+
+        for part in parts:
+            part = part.strip()
+            if not part:
+                continue
+            try:
+                doc_num_m = re.search(r'View\s+(20\d{8})', part)
+                if not doc_num_m:
+                    continue
+                doc_num = doc_num_m.group(1)
+
+                date_m = re.search(r'(\d{2}/\d{2}/\d{4})', part)
+                if not date_m:
+                    continue
+                raw_date = date_m.group(1)
+
+                try:
+                    filed_dt  = datetime.strptime(raw_date, "%m/%d/%Y")
+                    filed_str = filed_dt.strftime("%Y-%m-%d")
+                    if (today - filed_dt).days > LOOK_BACK_DAYS + 1:
+                        continue
+                except Exception:
+                    continue
+
+                doc_type_m = re.search(
+                    r'\d{2}/\d{2}/\d{4}\s+([A-Z][A-Z0-9 /]+?)\s+\[R\]', part)
+                raw_doc_type = ""
+                if doc_type_m:
+                    # Doc type is repeated (e.g. "DEED DEED"), take unique part
+                    dt = doc_type_m.group(1).strip()
+                    words = dt.split()
+                    mid = len(words) // 2
+                    if words[:mid] == words[mid:]:
+                        dt = " ".join(words[:mid])
+                    raw_doc_type = dt
+
+                owner_m = re.search(r'\[R\]\s*(.*?)\s+\[E\]', part)
+                raw_owner = owner_m.group(1).strip() if owner_m else ""
+                # Clean trailing (+)
+                raw_owner = re.sub(r'\s*\(\+\)\s*$', '', raw_owner).strip()
+
+                grantee_m = re.search(r'\[E\]\s*(.*?)\s+R\s', part)
+                raw_grantee = grantee_m.group(1).strip() if grantee_m else ""
+                raw_grantee = re.sub(r'\s*\(\+\)\s*$', '', raw_grantee).strip()
+
+                legal_m = re.search(
+                    r'(?:LT|TRACT|LOTS?|SEC)\s+[\w\s]+(?=\s+Temp)', part)
+                legal = legal_m.group(0).strip() if legal_m else ""
+
+                glob_m = re.search(r'(OPR\d+)', part)
+                global_id = glob_m.group(1) if glob_m else ""
+                clerk_url = (f"{BASE_URL}/RealEstate/SearchResults.aspx"
+                             f"?global_id={global_id}&type=dtl") if global_id else SEARCH_URL
+
+                rec_code, rec_label = classify_doc_type(raw_doc_type)
+
+                rec = {
+                    "doc_num":      doc_num,
+                    "doc_type":     raw_doc_type,
+                    "filed":        filed_str,
+                    "cat":          rec_code,
+                    "cat_label":    rec_label,
+                    "owner":        raw_owner,
+                    "grantee":      raw_grantee,
+                    "amount":       "",
+                    "legal":        legal,
+                    "clerk_url":    clerk_url,
+                    "prop_address": "",
+                    "prop_city":    "",
+                    "prop_state":   "TX",
+                    "prop_zip":     "",
+                    "mail_address": "",
+                    "mail_city":    "",
+                    "mail_state":   "TX",
+                    "mail_zip":     "",
+                }
+
+                # Enrich from parcel DB
+                parcel = (self.parcel_db.lookup_instrument(doc_num)
+                          or self.parcel_db.lookup(raw_owner))
+                if parcel:
+                    rec.update({k: v for k, v in parcel.items() if v})
+
+                _sc, rec["flags"] = score_record(rec)
+                rec["score"] = int(_sc)
+                recs.append(rec)
+            except Exception as e:
+                log.debug("  full_count parse error: %s", e)
+
+        return recs
+
     def _enrich_from_detail(self, html: str, rec_map: dict):
         """
         Parse a Fort Bend document detail page to extract address and

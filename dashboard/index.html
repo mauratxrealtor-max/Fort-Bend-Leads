@@ -586,7 +586,9 @@ function getFlags(r) {
 }
 function getAddr(r) {
   var a = r.prop_address || '';
-  if (a.length > 80 || a.indexOf('General') >= 0 || a.indexOf('Document') >= 0) return '';
+  // Reject junk from detail page parsing
+  if (a.length > 80 || a.indexOf('General') >= 0 || a.indexOf('Document') >= 0 ||
+      a.indexOf('Instrument') >= 0 || a.indexOf('Grantor') >= 0) return '';
   return a;
 }
 function fmtAmt(a) {

@@ -575,6 +575,26 @@ let SORT_DIR     = 'desc';
     const data = await r.json();
     ALL_RECORDS = data.records || [];
 
+    // DEBUG: log first record to console
+    console.log('records.json loaded:', data.total, 'total, array:', ALL_RECORDS.length);
+    if (ALL_RECORDS.length > 0) {
+      const sample = ALL_RECORDS[0];
+      console.log('Sample record:', JSON.stringify(sample));
+      console.log('score type:', typeof sample.score, 'value:', sample.score);
+      console.log('cat:', sample.cat, 'filed:', sample.filed);
+    }
+
+    // Normalize records — ensure score is int, flags is array
+    ALL_RECORDS = ALL_RECORDS.map(r => ({
+      ...r,
+      score: parseInt(Array.isArray(r.score) ? r.score[0] : r.score) || 0,
+      flags: Array.isArray(r.flags) ? r.flags : (typeof r.flags === 'string' ? r.flags.split(',').filter(Boolean) : []),
+      cat:   r.cat || 'OTHER',
+      filed: r.filed || '',
+    }));
+
+    console.log('After normalize, first record score:', ALL_RECORDS[0]?.score);
+
     // Header meta
     document.getElementById('fetch-time').textContent =
       data.fetched_at
@@ -590,7 +610,7 @@ let SORT_DIR     = 'desc';
     applyFilters();
     buildCharts();
   } catch(e) {
-    console.error(e);
+    console.error('Dashboard init error:', e);
     document.getElementById('empty-state').style.display = 'block';
     document.querySelector('.table-wrap').style.display = 'none';
   }

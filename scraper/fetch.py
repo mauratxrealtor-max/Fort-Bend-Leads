@@ -1394,7 +1394,8 @@ class ClerkScraper:
                 parcel = (self.parcel_db.lookup_instrument(doc_num)
                           or self.parcel_db.lookup(raw_owner))
                 if parcel:
-                    rec.update({k: v for k, v in parcel.items() if v})
+                    rec.update({k: v for k, v in parcel.items()
+                                 if v and isinstance(v, str) and len(v) < 100})
 
                 _sc, rec["flags"] = score_record(rec)
                 rec["score"] = int(_sc)
@@ -1492,7 +1493,7 @@ class ClerkScraper:
                         rec["amount"] = val
 
         # Re-score after enrichment
-        rec["flags"], _sc = score_record(rec)
+        _sc, rec["flags"] = score_record(rec)
         rec["score"] = int(_sc)
 
     def _parse_table(self, html: str, code: str, label: str,

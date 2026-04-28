@@ -1,5 +1,5 @@
 {
-  "fetched_at": "2026-04-28T02:07:48.964419Z",
+  "fetched_at": "2026-04-28T02:18:59.563564Z",
   "source": "Fort Bend County Clerk + Fort Bend CAD",
   "date_range": {
     "from": "2026-01-28",
@@ -27,183 +27,9 @@
       "mail_city": "Richmond",
       "mail_state": "TX",
       "mail_zip": "77469",
-      "flags": 50,
-      "score": 50
-    },
-    {
-      "doc_num": "2026041412",
-      "doc_type": "NOTICE",
-      "filed": "2026-04-27",
-      "cat": "OTHER",
-      "cat_label": "Notice",
-      "owner": "ELLEFSON JENNIFER L",
-      "grantee": "LEE JAMES P MILLER 44111F SHANNON",
-      "amount": "",
-      "legal": "LT 23 BLK 14 PECAN GROVE PLANTATION Temp",
-      "clerk_url": "https://ccweb.co.fort-bend.tx.us/RealEstate/SearchResults.aspx?global_id=OPR665689750&type=dtl",
-      "prop_address": "1915 Rock Fence DR",
-      "prop_city": "Richmond",
-      "prop_state": "TX",
-      "prop_zip": "77406",
-      "mail_address": "1915 Rock Fence DR",
-      "mail_city": "Richmond",
-      "mail_state": "TX",
-      "mail_zip": "77406",
-      "flags": 50,
-      "score": 50
-    },
-    {
-      "doc_num": "2026041411",
-      "doc_type": "DEED",
-      "filed": "2026-04-27",
-      "cat": "OTHER",
-      "cat_label": "Deed",
-      "owner": "ELLEFSON JENNIFER L",
-      "grantee": "MILLER JAMES P JR",
-      "amount": "",
-      "legal": "LT 23 BLK 14 PECAN GROVE PLANTATION Temp",
-      "clerk_url": "https://ccweb.co.fort-bend.tx.us/RealEstate/SearchResults.aspx?global_id=OPR665689740&type=dtl",
-      "prop_address": "1915 Rock Fence DR",
-      "prop_city": "Richmond",
-      "prop_state": "TX",
-      "prop_zip": "77406",
-      "mail_address": "1915 Rock Fence DR",
-      "mail_city": "Richmond",
-      "mail_state": "TX",
-      "mail_zip": "77406",
-      "flags": 50,
-      "score": 50
-    },
-    {
-      "doc_num": "2026041410",
-      "doc_type": "NOTICE",
-      "filed": "2026-04-27",
-      "cat": "OTHER",
-      "cat_label": "Notice",
-      "owner": "LOU DAVID CONGYI",
-      "grantee": "QUISENBERRY JOSHUA",
-      "amount": "",
-      "legal": "LT 5 BLK 2 SIENNA PLANTATION Temp",
-      "clerk_url": "https://ccweb.co.fort-bend.tx.us/RealEstate/SearchResults.aspx?global_id=OPR665687500&type=dtl",
-      "prop_address": "8758 Laurel Crest DR",
-      "prop_city": "Missouri City",
-      "prop_state": "TX",
-      "prop_zip": "77459",
-      "mail_address": "29115 Parker Trace DR",
-      "mail_city": "Fulshear",
-      "mail_state": "TX",
-      "mail_zip": "77441",
-      "flags": 50,
-      "score": 50
-    },
-    {
-      "doc_num": "2026041409",
-      "doc_type": "NOTICE",
-      "filed": "2026-04-27",
-      "cat": "OTHER",
-      "cat_label": "Notice",
-      "owner": "LOU DAVID CONGYI",
-      "grantee": "QUISENBERRY JOSHUA",
-      "amount": "",
-      "legal": "LT 5 BLK 2 SIENNA PLANTATION Temp",
-      "clerk_url": "https://ccweb.co.fort-bend.tx.us/RealEstate/SearchResults.aspx?global_id=OPR665687480&type=dtl",
-      "prop_address": "8758 Laurel Crest DR",
-      "prop_city": "Missouri City",
-      "prop_state": "TX",
-      "prop_zip": "77459",
-      "mail_address": "29115 Parker Trace DR",
-      "mail_city": "Fulshear",
-      "mail_state": "TX",
-      "mail_zip": "77441",
-      "flags": 50,
-      "score": 50
-    },
-    {
-      "doc_num": "2026041408",
-      "doc_type": "DEED",
-      "filed": "2026-04-27",
-      "cat": "OTHER",
-      "cat_label": "Deed",
-      "owner": "LOU DAVID CONGYI",
-      "grantee": "QUISENBERRY JOSHUA",
-      "amount": "",
-      "legal": "LT 5 BLK 2 SIENNA PLANTATION Temp",
-      "clerk_url": "https://ccweb.co.fort-bend.tx.us/RealEstate/SearchResults.aspx?global_id=OPR665687470&type=dtl",
-      "prop_address": "8758 Laurel Crest DR",
-      "prop_city": "Missouri City",
-      "prop_state": "TX",
-      "prop_zip": "77459",
-      "mail_address": "29115 Parker Trace DR",
-      "mail_city": "Fulshear",
-      "mail_state": "TX",
-      "mail_zip": "77441",
-      "flags": 50,
-      "score": 50
-    },
-    {
-      "doc_num": "2026041407",
-      "doc_type": "MODIFICATION",
-      "filed": "2026-04-27",
-      "cat": "OTHER",
-      "cat_label": "Modification",
-      "owner": "MITCHELL MICHAEL TORY",
-      "grantee": "MITCHELL MICHAEL TORY",
-      "amount": "",
-      "legal": "LT 6 BLK 3 FIELDSTONE Temp",
-      "clerk_url": "https://ccweb.co.fort-bend.tx.us/RealEstate/SearchResults.aspx?global_id=OPR665688920&type=dtl",
-      "prop_address": "20118 Stoneview DR",
-      "prop_city": "Richmond",
-      "prop_state": "TX",
-      "prop_zip": "77407",
-      "mail_address": "20118 Stoneview DR",
-      "mail_city": "Richmond",
-      "mail_state": "TX",
-      "mail_zip": "77407",
-      "flags": 50,
-      "score": 50
-    },
-    {
-      "doc_num": "2026041403",
-      "doc_type": "DEED",
-      "filed": "2026-04-27",
-      "cat": "OTHER",
-      "cat_label": "Deed",
-      "owner": "RAHMAN INAMUR",
-      "grantee": "NAWAZ ALI A",
-      "amount": "",
-      "legal": "LT 8 BLK 5 SUGAR GROVE Temp",
-      "clerk_url": "https://ccweb.co.fort-bend.tx.us/RealEstate/SearchResults.aspx?global_id=OPR665687310&type=dtl",
-      "prop_address": "15007 Sugar Sands DR",
-      "prop_city": "Sugar Land",
-      "prop_state": "TX",
-      "prop_zip": "77498",
-      "mail_address": "10007 Hazel Woods CT",
-      "mail_city": "Richmond",
-      "mail_state": "TX",
-      "mail_zip": "77407",
-      "flags": 50,
-      "score": 50
-    },
-    {
-      "doc_num": "2026041399",
-      "doc_type": "TRANSFER",
-      "filed": "2026-04-27",
-      "cat": "OTHER",
-      "cat_label": "Transfer",
-      "owner": "BIRD ELISSA",
-      "grantee": "TAX LIEN LOAN SPV, LLC",
-      "amount": "",
-      "legal": "LT 14 BLK 2 AUTUMN RIDGE Temp",
-      "clerk_url": "https://ccweb.co.fort-bend.tx.us/RealEstate/SearchResults.aspx?global_id=OPR665688140&type=dtl",
-      "prop_address": "4026 Harwood DR",
-      "prop_city": "Sugar Land",
-      "prop_state": "TX",
-      "prop_zip": "77479",
-      "mail_address": "4026 Harwood DR",
-      "mail_city": "Sugar Land",
-      "mail_state": "TX",
-      "mail_zip": "77479",
-      "flags": 50,
+      "flags": [
+        "New this week"
+      ],
       "score": 50
     },
     {
@@ -225,8 +51,10 @@
       "mail_city": "",
       "mail_state": "TX",
       "mail_zip": "",
-      "flags": 50,
-      "score": 45
+      "flags": [
+        "New this week"
+      ],
+      "score": 50
     },
     {
       "doc_num": "2026041416",
@@ -247,8 +75,10 @@
       "mail_city": "",
       "mail_state": "TX",
       "mail_zip": "",
-      "flags": 50,
-      "score": 45
+      "flags": [
+        "New this week"
+      ],
+      "score": 50
     },
     {
       "doc_num": "2026041415",
@@ -269,8 +99,10 @@
       "mail_city": "",
       "mail_state": "TX",
       "mail_zip": "",
-      "flags": 50,
-      "score": 45
+      "flags": [
+        "New this week"
+      ],
+      "score": 50
     },
     {
       "doc_num": "2026041414",
@@ -291,8 +123,10 @@
       "mail_city": "",
       "mail_state": "TX",
       "mail_zip": "",
-      "flags": 50,
-      "score": 45
+      "flags": [
+        "New this week"
+      ],
+      "score": 50
     },
     {
       "doc_num": "2026041413",
@@ -313,8 +147,154 @@
       "mail_city": "",
       "mail_state": "TX",
       "mail_zip": "",
-      "flags": 50,
-      "score": 45
+      "flags": [
+        "New this week"
+      ],
+      "score": 50
+    },
+    {
+      "doc_num": "2026041412",
+      "doc_type": "NOTICE",
+      "filed": "2026-04-27",
+      "cat": "OTHER",
+      "cat_label": "Notice",
+      "owner": "ELLEFSON JENNIFER L",
+      "grantee": "LEE JAMES P MILLER 44111F SHANNON",
+      "amount": "",
+      "legal": "LT 23 BLK 14 PECAN GROVE PLANTATION Temp",
+      "clerk_url": "https://ccweb.co.fort-bend.tx.us/RealEstate/SearchResults.aspx?global_id=OPR665689750&type=dtl",
+      "prop_address": "1915 Rock Fence DR",
+      "prop_city": "Richmond",
+      "prop_state": "TX",
+      "prop_zip": "77406",
+      "mail_address": "1915 Rock Fence DR",
+      "mail_city": "Richmond",
+      "mail_state": "TX",
+      "mail_zip": "77406",
+      "flags": [
+        "New this week"
+      ],
+      "score": 50
+    },
+    {
+      "doc_num": "2026041411",
+      "doc_type": "DEED",
+      "filed": "2026-04-27",
+      "cat": "OTHER",
+      "cat_label": "Deed",
+      "owner": "ELLEFSON JENNIFER L",
+      "grantee": "MILLER JAMES P JR",
+      "amount": "",
+      "legal": "LT 23 BLK 14 PECAN GROVE PLANTATION Temp",
+      "clerk_url": "https://ccweb.co.fort-bend.tx.us/RealEstate/SearchResults.aspx?global_id=OPR665689740&type=dtl",
+      "prop_address": "1915 Rock Fence DR",
+      "prop_city": "Richmond",
+      "prop_state": "TX",
+      "prop_zip": "77406",
+      "mail_address": "1915 Rock Fence DR",
+      "mail_city": "Richmond",
+      "mail_state": "TX",
+      "mail_zip": "77406",
+      "flags": [
+        "New this week"
+      ],
+      "score": 50
+    },
+    {
+      "doc_num": "2026041410",
+      "doc_type": "NOTICE",
+      "filed": "2026-04-27",
+      "cat": "OTHER",
+      "cat_label": "Notice",
+      "owner": "LOU DAVID CONGYI",
+      "grantee": "QUISENBERRY JOSHUA",
+      "amount": "",
+      "legal": "LT 5 BLK 2 SIENNA PLANTATION Temp",
+      "clerk_url": "https://ccweb.co.fort-bend.tx.us/RealEstate/SearchResults.aspx?global_id=OPR665687500&type=dtl",
+      "prop_address": "8758 Laurel Crest DR",
+      "prop_city": "Missouri City",
+      "prop_state": "TX",
+      "prop_zip": "77459",
+      "mail_address": "29115 Parker Trace DR",
+      "mail_city": "Fulshear",
+      "mail_state": "TX",
+      "mail_zip": "77441",
+      "flags": [
+        "New this week"
+      ],
+      "score": 50
+    },
+    {
+      "doc_num": "2026041409",
+      "doc_type": "NOTICE",
+      "filed": "2026-04-27",
+      "cat": "OTHER",
+      "cat_label": "Notice",
+      "owner": "LOU DAVID CONGYI",
+      "grantee": "QUISENBERRY JOSHUA",
+      "amount": "",
+      "legal": "LT 5 BLK 2 SIENNA PLANTATION Temp",
+      "clerk_url": "https://ccweb.co.fort-bend.tx.us/RealEstate/SearchResults.aspx?global_id=OPR665687480&type=dtl",
+      "prop_address": "8758 Laurel Crest DR",
+      "prop_city": "Missouri City",
+      "prop_state": "TX",
+      "prop_zip": "77459",
+      "mail_address": "29115 Parker Trace DR",
+      "mail_city": "Fulshear",
+      "mail_state": "TX",
+      "mail_zip": "77441",
+      "flags": [
+        "New this week"
+      ],
+      "score": 50
+    },
+    {
+      "doc_num": "2026041408",
+      "doc_type": "DEED",
+      "filed": "2026-04-27",
+      "cat": "OTHER",
+      "cat_label": "Deed",
+      "owner": "LOU DAVID CONGYI",
+      "grantee": "QUISENBERRY JOSHUA",
+      "amount": "",
+      "legal": "LT 5 BLK 2 SIENNA PLANTATION Temp",
+      "clerk_url": "https://ccweb.co.fort-bend.tx.us/RealEstate/SearchResults.aspx?global_id=OPR665687470&type=dtl",
+      "prop_address": "8758 Laurel Crest DR",
+      "prop_city": "Missouri City",
+      "prop_state": "TX",
+      "prop_zip": "77459",
+      "mail_address": "29115 Parker Trace DR",
+      "mail_city": "Fulshear",
+      "mail_state": "TX",
+      "mail_zip": "77441",
+      "flags": [
+        "New this week"
+      ],
+      "score": 50
+    },
+    {
+      "doc_num": "2026041407",
+      "doc_type": "MODIFICATION",
+      "filed": "2026-04-27",
+      "cat": "OTHER",
+      "cat_label": "Modification",
+      "owner": "MITCHELL MICHAEL TORY",
+      "grantee": "MITCHELL MICHAEL TORY",
+      "amount": "",
+      "legal": "LT 6 BLK 3 FIELDSTONE Temp",
+      "clerk_url": "https://ccweb.co.fort-bend.tx.us/RealEstate/SearchResults.aspx?global_id=OPR665688920&type=dtl",
+      "prop_address": "20118 Stoneview DR",
+      "prop_city": "Richmond",
+      "prop_state": "TX",
+      "prop_zip": "77407",
+      "mail_address": "20118 Stoneview DR",
+      "mail_city": "Richmond",
+      "mail_state": "TX",
+      "mail_zip": "77407",
+      "flags": [
+        "New this week"
+      ],
+      "score": 50
     },
     {
       "doc_num": "2026041406",
@@ -335,8 +315,10 @@
       "mail_city": "",
       "mail_state": "TX",
       "mail_zip": "",
-      "flags": 50,
-      "score": 45
+      "flags": [
+        "New this week"
+      ],
+      "score": 50
     },
     {
       "doc_num": "2026041405",
@@ -357,8 +339,10 @@
       "mail_city": "",
       "mail_state": "TX",
       "mail_zip": "",
-      "flags": 50,
-      "score": 45
+      "flags": [
+        "New this week"
+      ],
+      "score": 50
     },
     {
       "doc_num": "2026041404",
@@ -379,8 +363,34 @@
       "mail_city": "",
       "mail_state": "TX",
       "mail_zip": "",
-      "flags": 50,
-      "score": 45
+      "flags": [
+        "New this week"
+      ],
+      "score": 50
+    },
+    {
+      "doc_num": "2026041403",
+      "doc_type": "DEED",
+      "filed": "2026-04-27",
+      "cat": "OTHER",
+      "cat_label": "Deed",
+      "owner": "RAHMAN INAMUR",
+      "grantee": "NAWAZ ALI A",
+      "amount": "",
+      "legal": "LT 8 BLK 5 SUGAR GROVE Temp",
+      "clerk_url": "https://ccweb.co.fort-bend.tx.us/RealEstate/SearchResults.aspx?global_id=OPR665687310&type=dtl",
+      "prop_address": "15007 Sugar Sands DR",
+      "prop_city": "Sugar Land",
+      "prop_state": "TX",
+      "prop_zip": "77498",
+      "mail_address": "10007 Hazel Woods CT",
+      "mail_city": "Richmond",
+      "mail_state": "TX",
+      "mail_zip": "77407",
+      "flags": [
+        "New this week"
+      ],
+      "score": 50
     },
     {
       "doc_num": "2026041402",
@@ -401,8 +411,10 @@
       "mail_city": "",
       "mail_state": "TX",
       "mail_zip": "",
-      "flags": 50,
-      "score": 45
+      "flags": [
+        "New this week"
+      ],
+      "score": 50
     },
     {
       "doc_num": "2026041401",
@@ -423,8 +435,10 @@
       "mail_city": "",
       "mail_state": "TX",
       "mail_zip": "",
-      "flags": 50,
-      "score": 45
+      "flags": [
+        "New this week"
+      ],
+      "score": 50
     },
     {
       "doc_num": "2026041400",
@@ -445,8 +459,34 @@
       "mail_city": "",
       "mail_state": "TX",
       "mail_zip": "",
-      "flags": 50,
-      "score": 45
+      "flags": [
+        "New this week"
+      ],
+      "score": 50
+    },
+    {
+      "doc_num": "2026041399",
+      "doc_type": "TRANSFER",
+      "filed": "2026-04-27",
+      "cat": "OTHER",
+      "cat_label": "Transfer",
+      "owner": "BIRD ELISSA",
+      "grantee": "TAX LIEN LOAN SPV, LLC",
+      "amount": "",
+      "legal": "LT 14 BLK 2 AUTUMN RIDGE Temp",
+      "clerk_url": "https://ccweb.co.fort-bend.tx.us/RealEstate/SearchResults.aspx?global_id=OPR665688140&type=dtl",
+      "prop_address": "4026 Harwood DR",
+      "prop_city": "Sugar Land",
+      "prop_state": "TX",
+      "prop_zip": "77479",
+      "mail_address": "4026 Harwood DR",
+      "mail_city": "Sugar Land",
+      "mail_state": "TX",
+      "mail_zip": "77479",
+      "flags": [
+        "New this week"
+      ],
+      "score": 50
     }
   ]
 }

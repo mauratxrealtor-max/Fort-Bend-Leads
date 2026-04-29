@@ -565,7 +565,7 @@ class ClerkScraper:
             cur_html = pg_content
 
             # Try full-count text cell parser (faster, handles the big concatenated cell)
-            if len(cur_html) > 400_000:
+            if len(cur_html) > 300_000:
                 from bs4 import BeautifulSoup as _BS
                 _soup = _BS(cur_html, "lxml")
                 page_recs = []

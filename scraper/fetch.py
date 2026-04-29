@@ -340,54 +340,38 @@ class ClerkScraper:
                 await browser.close()
                 return
 
-            # Run targeted searches for each motivated-seller type FIRST
-            # Each gets up to 20 records for that type over 90 days.
-            # Then broad search as fallback to catch anything missed.
-            TARGETED = [
-                ("LP",       "LIS PENDENS"),
-                ("NOFC",     "FORECLOSURE"),
-                ("JUD",      "JUDGMENT"),
-                ("LNIRS",    "IRS"),
-                ("LNCORPTX", "STATE TAX"),
-                ("LNMECH",   "MECHANIC"),
-                ("LNHOA",    "HOA"),
-                ("PRO",      "PROBATE"),
-                ("TAXDEED",  "TAX DEED"),
-                ("LNFED",    "FEDERAL"),
-                ("LN",       "LIEN"),
-            ]
+            # Strategy: fetch weekly 7-day chunks over 90 days.
+            # Each broad search returns the 20 most-recent docs for that week.
+            # 13 weeks × up to 20 records = up to 260 records before dedup.
+            # Then filter for motivated-seller doc types.
+            from datetime import datetime as _dt, timedelta as _td
+
+            dt_from = _dt.strptime(date_from, "%m/%d/%Y")
+            dt_to   = _dt.strptime(date_to,   "%m/%d/%Y")
+
             existing = set()
             total_found = 0
+            chunk_days = 7  # weekly chunks
 
-            for code, term in TARGETED:
+            cursor = dt_to  # start from most recent and go backwards
+            while cursor > dt_from:
+                start = max(cursor - _td(days=chunk_days), dt_from)
+                chunk_from = start.strftime("%m/%d/%Y")
+                chunk_to   = cursor.strftime("%m/%d/%Y")
                 try:
-                    label = DOC_TYPES.get(code, (term, ""))[0]
-                    recs = await self._targeted_search(
-                        page, code, label, term, date_from, date_to
-                    )
+                    recs = await self._playwright_search(page, None, None, chunk_from, chunk_to)
                     new_recs = [r for r in recs if r["doc_num"] not in existing]
                     if new_recs:
                         self.records.extend(new_recs)
                         existing.update(r["doc_num"] for r in new_recs)
                         total_found += len(new_recs)
-                        log.info("  [%s] %s: +%d (total=%d)", code, term, len(new_recs), total_found)
-                    else:
-                        log.info("  [%s] %s: 0 new", code, term)
+                    log.info("  Chunk %s→%s: %d records (%d new, total=%d)",
+                             chunk_from, chunk_to, len(recs), len(new_recs), total_found)
                 except Exception as e:
-                    log.warning("  Targeted [%s] error: %s", code, e)
+                    log.warning("  Chunk %s error: %s", chunk_from, e)
+                cursor = start
 
-            # Broad fallback — catches any doc types not in targeted list
-            log.info("Running broad fallback search...")
-            try:
-                recs = await self._playwright_search(page, None, None, date_from, date_to)
-                new_recs = [r for r in recs if r["doc_num"] not in existing]
-                if new_recs:
-                    self.records.extend(new_recs)
-                    existing.update(r["doc_num"] for r in new_recs)
-                    total_found += len(new_recs)
-                log.info("Broad fallback: +%d new (grand total=%d)", len(new_recs), total_found)
-            except Exception as e:
-                log.warning("  Broad fallback error: %s", e)
+            log.info("Weekly chunks done — %d total records", total_found)
 
 
             await browser.close()
@@ -395,51 +379,8 @@ class ClerkScraper:
 
     async def _targeted_search(self, page, code, label, search_term,
                                date_from, date_to) -> list[dict]:
-        """
-        Run one search per 30-day chunk WITH the doc type field filled in.
-        This filters server-side so we get up to 20 records of THIS type per chunk.
-        Falls back to client-side filtering if doc type field doesn't redirect.
-        """
-        from datetime import datetime as _dt, timedelta as _td
-
-        dt_from = _dt.strptime(date_from, "%m/%d/%Y")
-        dt_to   = _dt.strptime(date_to,   "%m/%d/%Y")
-
-        chunks = []
-        cursor = dt_from
-        while cursor < dt_to:
-            end = min(cursor + _td(days=30), dt_to)
-            chunks.append((cursor.strftime("%m/%d/%Y"), end.strftime("%m/%d/%Y")))
-            cursor = end
-
-        matched = []
-        keywords = [kw.upper() for kw in DOC_TYPE_KEYWORDS.get(code, [search_term])]
-        keywords.append(search_term.upper())
-
-        for chunk_from, chunk_to in chunks:
-            try:
-                # Pass code so _playwright_search fills the doc type text field
-                recs = await self._playwright_search(page, code, label, chunk_from, chunk_to)
-                # If we got results and they came back — great
-                # If the portal ignored the doc type filter, filter client-side
-                if recs:
-                    for r in recs:
-                        dt_upper = (r.get("doc_type") or "").upper()
-                        # Accept if already classified as this type, OR if keyword matches
-                        if r.get("cat") == code or any(kw in dt_upper for kw in keywords):
-                            import copy
-                            rec = copy.copy(r)
-                            rec["cat"]       = code
-                            rec["cat_label"] = label
-                            matched.append(rec)
-                    log.info("  [%s] %s→%s: %d/%d matched",
-                             code, chunk_from, chunk_to, 
-                             sum(1 for r in recs if any(kw in (r.get("doc_type","")).upper() for kw in keywords)),
-                             len(recs))
-            except Exception as e:
-                log.warning("  [%s] chunk %s error: %s", code, chunk_from, e)
-
-        return matched
+        """Stub — not used. See run() which uses weekly chunks directly."""
+        return []
 
     async def _playwright_search(self, page, code, label, date_from, date_to):
         """

@@ -396,55 +396,55 @@ class ClerkScraper:
     async def _targeted_search(self, page, code, label, search_term,
                                date_from, date_to) -> list[dict]:
         """
-        The portal only redirects to SearchResults when NO doc type filter is set.
-        So we use broad date-window searches across multiple sub-periods to get
-        more records, then filter client-side by doc type keyword.
-
-        For each 30-day chunk within the 90-day window, do a broad search and
-        keep only records matching this doc type.
+        Filter a cached broad search by doc type keyword.
+        The broad search results are cached on self._chunk_cache to avoid
+        running 11x3 identical searches.
         """
         from datetime import datetime as _dt, timedelta as _td
         import re as _re
 
         dt_from = _dt.strptime(date_from, "%m/%d/%Y")
         dt_to   = _dt.strptime(date_to,   "%m/%d/%Y")
-        total_days = (dt_to - dt_from).days
 
-        # Split into 30-day chunks so each search returns recent records for that window
-        chunk_days = 30
+        # Build 30-day chunks
         chunks = []
         cursor = dt_from
         while cursor < dt_to:
-            end = min(cursor + _td(days=chunk_days), dt_to)
+            end = min(cursor + _td(days=30), dt_to)
             chunks.append((cursor.strftime("%m/%d/%Y"), end.strftime("%m/%d/%Y")))
             cursor = end
 
-        log.info("  [%s] searching %d chunks of up to %d days for '%s'",
-                 code, len(chunks), chunk_days, search_term)
+        # Initialise cache if needed
+        if not hasattr(self, '_chunk_cache'):
+            self._chunk_cache = {}
 
-        all_recs = []
         keywords = [kw.upper() for kw in DOC_TYPE_KEYWORDS.get(code, [search_term])]
         keywords.append(search_term.upper())
 
+        matched = []
         for chunk_from, chunk_to in chunks:
-            try:
-                recs = await self._playwright_search(page, None, None, chunk_from, chunk_to)
-                # Filter to matching doc types
-                matched = []
-                for r in recs:
-                    dt_upper = (r.get("doc_type") or "").upper()
-                    if any(kw in dt_upper for kw in keywords):
-                        r["cat"]       = code
-                        r["cat_label"] = label
-                        matched.append(r)
-                if matched:
-                    log.info("  [%s] %s→%s: %d/%d matched",
-                             code, chunk_from, chunk_to, len(matched), len(recs))
-                all_recs.extend(matched)
-            except Exception as e:
-                log.debug("  [%s] chunk %s error: %s", code, chunk_from, e)
+            key = (chunk_from, chunk_to)
+            # Use cached broad results for this chunk
+            if key not in self._chunk_cache:
+                try:
+                    recs = await self._playwright_search(page, None, None, chunk_from, chunk_to)
+                    self._chunk_cache[key] = recs
+                    log.info("  Cached chunk %s→%s: %d records", chunk_from, chunk_to, len(recs))
+                except Exception as e:
+                    log.warning("  Chunk %s error: %s", chunk_from, e)
+                    self._chunk_cache[key] = []
+            chunk_recs = self._chunk_cache[key]
+            # Filter by doc type
+            for r in chunk_recs:
+                dt_upper = (r.get("doc_type") or "").upper()
+                if any(kw in dt_upper for kw in keywords):
+                    import copy
+                    rec = copy.copy(r)
+                    rec["cat"]       = code
+                    rec["cat_label"] = label
+                    matched.append(rec)
 
-        return all_recs
+        return matched
 
     async def _playwright_search(self, page, code, label, date_from, date_to):
         """

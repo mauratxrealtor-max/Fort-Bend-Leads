@@ -1,39 +1,13 @@
 {
-  "fetched_at": "2026-04-29T00:12:51.306175Z",
+  "fetched_at": "2026-04-29T00:39:50.165691Z",
   "source": "Fort Bend County Clerk + Fort Bend CAD",
   "date_range": {
     "from": "2026-01-29",
     "to": "2026-04-29"
   },
-  "total": 18,
-  "with_address": 3,
+  "total": 17,
+  "with_address": 2,
   "records": [
-    {
-      "doc_num": "2026030611",
-      "doc_type": "LIS PENDENS",
-      "filed": "2026-03-30",
-      "cat": "LP",
-      "cat_label": "Lis Pendens",
-      "owner": "FIRST COLONY COMMUNITY SERVICES ASSOCIATION INC",
-      "grantee": "FIRST COLONY COMMUNITY SERVICES ASSOCIATION INC",
-      "amount": "",
-      "legal": "",
-      "clerk_url": "https://ccweb.co.fort-bend.tx.us/RealEstate/SearchResults.aspx?global_id=OPR663324880&type=dtl",
-      "prop_address": "Gabriel River CIR",
-      "prop_city": "Sugar Land",
-      "prop_state": "TX",
-      "prop_zip": "77478",
-      "mail_address": "4350 Austin PKWY",
-      "mail_city": "Sugar Land",
-      "mail_state": "TX",
-      "mail_zip": "77479",
-      "flags": [
-        "Lis pendens",
-        "Pre-foreclosure",
-        "LLC / corp owner"
-      ],
-      "score": 85
-    },
     {
       "doc_num": "2026042095",
       "doc_type": "DEED",

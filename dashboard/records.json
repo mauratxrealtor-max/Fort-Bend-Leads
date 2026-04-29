@@ -1,11 +1,11 @@
 {
-  "fetched_at": "2026-04-29T12:46:42.836158Z",
+  "fetched_at": "2026-04-29T13:35:29.814025Z",
   "source": "Fort Bend County Clerk + Fort Bend CAD",
   "date_range": {
     "from": "2026-01-29",
     "to": "2026-04-29"
   },
-  "total": 257,
+  "total": 258,
   "with_address": 0,
   "records": [
     {
@@ -134,6 +134,30 @@
         "LLC / corp owner"
       ],
       "score": 50
+    },
+    {
+      "doc_num": "2026042103",
+      "doc_type": "AFFIDAVIT",
+      "filed": "2026-04-29",
+      "cat": "OTHER",
+      "cat_label": "Affidavit",
+      "owner": "JOSE CERVANTES",
+      "grantee": "PUBLIC",
+      "amount": "",
+      "legal": "LT 3 COON ACRES LOC 1103 COON DRIVE ROSENBERG",
+      "clerk_url": "https://ccweb.co.fort-bend.tx.us/RealEstate/SearchResults.aspx?global_id=OPR665857090&type=dtl",
+      "prop_address": "",
+      "prop_city": "",
+      "prop_state": "TX",
+      "prop_zip": "",
+      "mail_address": "",
+      "mail_city": "",
+      "mail_state": "TX",
+      "mail_zip": "",
+      "flags": [
+        "New this week"
+      ],
+      "score": 45
     },
     {
       "doc_num": "2026042102",

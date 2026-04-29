@@ -34,14 +34,19 @@ jobs:
       - name: Install Playwright browsers
         run: python -m playwright install --with-deps chromium
 
-      - name: Copy FBCAD data files (if present in repo)
+      - name: Decode parcel DB from base64 (avoids binary corruption on web upload)
         run: |
-          # The FBCAD property data files should be committed to data/fbcad/
-          # They are large so we only copy if present
-          mkdir -p /mnt/user-data/uploads || true
-          if [ -d data/fbcad ]; then
-            cp data/fbcad/*.txt /mnt/user-data/uploads/ 2>/dev/null || true
-            echo "FBCAD files copied"
+          if [ -f data/parcel_compact.b64 ]; then
+            python3 -c "
+import base64
+with open('data/parcel_compact.b64', 'r') as f:
+    data = base64.b64decode(f.read())
+with open('data/parcel_compact.csv.gz', 'wb') as f:
+    f.write(data)
+print('Decoded parcel_compact.b64 -> parcel_compact.csv.gz (' + str(len(data)) + ' bytes)')
+"
+          else
+            echo "No parcel_compact.b64 found, using existing csv.gz if present"
           fi
 
       - name: Run scraper (with full log output)

@@ -180,6 +180,7 @@ class ParcelDB:
     def __init__(self):
         self._by_instrument: dict[str, dict] = {}  # doc_num -> parcel
         self._by_owner: dict[str, dict] = {}        # owner name -> parcel
+        self._prefix_idx: dict[str, dict] = {}      # "FIRST LAST" prefix -> parcel
         self._loaded = False
 
     def load(self):
@@ -240,6 +241,11 @@ class ParcelDB:
                 if owner:
                     for v in self._name_variants(owner):
                         self._by_owner.setdefault(v, parcel)
+                    # Build prefix index: first 2 words -> parcel (e.g. "FREEMAN TYRONE")
+                    words = owner.split()
+                    if len(words) >= 2:
+                        prefix = words[0] + ' ' + words[1]
+                        self._prefix_idx.setdefault(prefix, parcel)
                 if instr:
                     self._by_instrument[instr.upper()] = parcel
                     self._by_instrument[instr.upper().lstrip('0')] = parcel
@@ -267,8 +273,24 @@ class ParcelDB:
                 hit = self._by_owner.get(v)
                 if hit:
                     return hit
+        # Prefix match — DB has "FREEMAN TYRONE G & EVA J", portal gives "FREEMAN TYRONE"
+        # Try each variant as a prefix of keys in the DB
+        for v in self._name_variants(owner):
+            v2 = v.upper().strip()
+            if len(v2) >= 6:
+                hit = self._prefix_lookup(v2)
+                if hit:
+                    return hit
         return None
 
+
+    def _prefix_lookup(self, name: str) -> Optional[dict]:
+        """Fast prefix lookup using first-two-words index."""
+        words = name.upper().strip().split()
+        if len(words) >= 2:
+            prefix = words[0] + ' ' + words[1]
+            return self._prefix_idx.get(prefix)
+        return None
 
     @staticmethod
     def _name_variants(name: str) -> list[str]:

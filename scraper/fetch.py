@@ -51,12 +51,16 @@ HOME_URL   = "https://ccweb.co.fort-bend.tx.us/"
 SEARCH_URL = "https://ccweb.co.fort-bend.tx.us/RealEstate/SearchEntry.aspx"
 FBCAD_BASE = "https://www.fbcad.org"
 
-OUTPUT_PATHS = [
-    Path(__file__).parent.parent / "dashboard" / "records.json",
-    Path(__file__).parent.parent / "data"      / "records.json",
-]
-GHL_PATH       = Path(__file__).parent.parent / "data" / "ghl_export.csv"
-LOOK_BACK_DAYS = 90
+_base = Path(__file__).parent.parent
+_records_out = os.environ.get("RECORDS_OUT")
+OUTPUT_PATHS = (
+    [_base / _records_out]
+    if _records_out else
+    [_base / "dashboard" / "records.json", _base / "data" / "records.json"]
+)
+_ghl_out = os.environ.get("GHL_OUT")
+GHL_PATH       = _base / (_ghl_out if _ghl_out else "data/ghl_export.csv")
+LOOK_BACK_DAYS = int(os.environ.get("LOOK_BACK_DAYS", "90"))
 RETRY_LIMIT    = 3
 
 # ── Doc-type catalogue ────────────────────────────────────────────────────────
@@ -362,10 +366,8 @@ class ClerkScraper:
                 await browser.close()
                 return
 
-            # Strategy: fetch weekly 7-day chunks over 90 days.
-            # Each broad search returns the 20 most-recent docs for that week.
-            # 13 weeks × up to 20 records = up to 260 records before dedup.
-            # Then filter for motivated-seller doc types.
+            # Strategy: fetch weekly 7-day chunks over LOOK_BACK_DAYS.
+            # Default 90 days = 13 chunks. Set LOOK_BACK_DAYS=365 for backfill (52 chunks).
             from datetime import datetime as _dt, timedelta as _td
 
             dt_from = _dt.strptime(date_from, "%m/%d/%Y")

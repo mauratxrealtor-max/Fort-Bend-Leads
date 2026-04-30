@@ -1398,6 +1398,26 @@ class ClerkScraper:
                     rec.update({k: v for k, v in parcel.items()
                                  if v and isinstance(v, str) and len(v) < 100})
 
+                # Fallback: extract address from LOC in the legal/full text
+                # Format: LOC 1931 HIGHCREST DRIVE MISSOURI CITY
+                if not rec.get("prop_address"):
+                    loc_m = re.search(
+                        r'LOC\s+(\d+.+?)(?:\s+(?:SLIDE|PDV|PDP|Perm|MICROFILM|\d{5}(?:\s|$)))',
+                        part, re.IGNORECASE
+                    )
+                    if not loc_m:
+                        loc_m = re.search(r'LOC\s+(\d+[\w\s]+)', part, re.IGNORECASE)
+                    if loc_m:
+                        full_loc = loc_m.group(1).strip()
+                        street_types = r'(DRIVE|COURT|LANE|STREET|AVENUE|ROAD|BOULEVARD|WAY|TRAIL|PLACE|CIRCLE|PARKWAY|LOOP|PATH|TRACE|TRCE|COVE|BEND|RUN|CROSSING|DR|ST|AVE|LN|CT|RD|BLVD|TRL|PL|CIR|PKWY|CV|BND|ALY|ALLEY|PASS|FWY|HWY)\.?'
+                        last_type = None
+                        for st_m in re.finditer(street_types, full_loc, re.IGNORECASE):
+                            last_type = st_m
+                        if last_type:
+                            rec["prop_address"] = full_loc[:last_type.end()].strip().title()
+                            rec["prop_city"]    = full_loc[last_type.end():].strip().title()
+                            rec["prop_state"]   = "TX"
+
                 _sc, rec["flags"] = score_record(rec)
                 rec["score"] = int(_sc)
                 recs.append(rec)

@@ -34,46 +34,20 @@ jobs:
       - name: Install Playwright browsers
         run: python -m playwright install --with-deps chromium
 
-      - name: Decode parcel DB from base64 (avoids binary corruption on web upload)
-        run: |
-          if [ -f data/parcel_compact.b64 ]; then
-            python3 -c "
-import base64
-with open('data/parcel_compact.b64', 'r') as f:
-    data = base64.b64decode(f.read())
-with open('data/parcel_compact.csv.gz', 'wb') as f:
-    f.write(data)
-print('Decoded parcel_compact.b64 -> parcel_compact.csv.gz (' + str(len(data)) + ' bytes)')
-"
-          else
-            echo "No parcel_compact.b64 found, using existing csv.gz if present"
-          fi
+      - name: Decode parcel DB
+        run: python3 scraper/decode_parcel.py
 
-      - name: Run scraper (with full log output)
+      - name: Run scraper
         run: python scraper/fetch.py
-        # Show all output even if it fails
-        continue-on-error: false
 
-      - name: Show records.json summary
-        run: |
-          echo "=== dashboard/records.json ==="
-          python -c "
-          import json
-          with open('dashboard/records.json') as f:
-              d = json.load(f)
-          print(f'Total: {d[\"total\"]}')
-          print(f'With address: {d[\"with_address\"]}')
-          print(f'Fetched at: {d[\"fetched_at\"]}')
-          if d['records']:
-              print('First record:', json.dumps(d['records'][0], indent=2))
-          "
+      - name: Show summary
+        run: python3 scraper/show_summary.py
 
       - name: Commit records
         run: |
-          git config user.name  "github-actions[bot]"
+          git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add dashboard/records.json data/records.json data/ghl_export.csv data/parcel_compact.csv.gz || true
-          # Force a commit even if records haven't changed by touching a timestamp file
+          git add dashboard/records.json data/records.json data/ghl_export.csv || true
           echo "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" > dashboard/.last_run
           git add dashboard/.last_run
           git commit -m "chore: update records $(date -u +'%Y-%m-%d %H:%M UTC')" || true

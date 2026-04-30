@@ -1393,7 +1393,8 @@ class ClerkScraper:
 
                 # Enrich from parcel DB
                 parcel = (self.parcel_db.lookup_instrument(doc_num)
-                          or self.parcel_db.lookup(raw_owner))
+                          or self.parcel_db.lookup(raw_owner)
+                          or self.parcel_db.lookup(raw_grantee))
                 if parcel:
                     rec.update({k: v for k, v in parcel.items()
                                  if v and isinstance(v, str) and len(v) < 100})

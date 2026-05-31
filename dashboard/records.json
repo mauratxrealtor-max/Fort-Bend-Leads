@@ -1,9 +1,9 @@
 {
-  "fetched_at": "2026-05-30T09:17:03.707535Z",
+  "fetched_at": "2026-05-31T09:50:09.307790Z",
   "source": "Fort Bend County Clerk + Fort Bend CAD",
   "date_range": {
-    "from": "2026-03-01",
-    "to": "2026-05-30"
+    "from": "2026-03-02",
+    "to": "2026-05-31"
   },
   "total": 260,
   "with_address": 227,
@@ -4209,14 +4209,14 @@
       "amount": "",
       "legal": "",
       "clerk_url": "https://ccweb.co.fort-bend.tx.us/RealEstate/SearchResults.aspx?global_id=OPR663648030&type=dtl",
-      "prop_address": "15034 Sugar Sands DR",
-      "prop_city": "Sugar Land",
+      "prop_address": "6922 Ithaca Heights LN",
+      "prop_city": "Richmond",
       "prop_state": "TX",
-      "prop_zip": "77498",
-      "mail_address": "15034 Sugar Sands DR",
-      "mail_city": "Sugar Land",
+      "prop_zip": "77407",
+      "mail_address": "6922 Ithaca Heights LN",
+      "mail_city": "Richmond",
       "mail_state": "TX",
-      "mail_zip": "77498",
+      "mail_zip": "77407",
       "flags": [],
       "score": 35
     },

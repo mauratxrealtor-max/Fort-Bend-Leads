@@ -1,9 +1,9 @@
 {
-  "fetched_at": "2026-06-20T10:11:09.234875Z",
+  "fetched_at": "2026-06-21T10:31:22.765744Z",
   "source": "Fort Bend County Clerk + Fort Bend CAD",
   "date_range": {
-    "from": "2026-03-22",
-    "to": "2026-06-20"
+    "from": "2026-03-23",
+    "to": "2026-06-21"
   },
   "total": 260,
   "with_address": 226,
@@ -3052,14 +3052,14 @@
       "amount": "",
       "legal": "",
       "clerk_url": "https://ccweb.co.fort-bend.tx.us/RealEstate/SearchResults.aspx?global_id=OPR668771530&type=dtl",
-      "prop_address": "9210 Hemlock DR",
+      "prop_address": "9210 Hemlock Drive",
       "prop_city": "Rosenberg",
       "prop_state": "TX",
-      "prop_zip": "77469",
-      "mail_address": "9210 Hemlock DR",
-      "mail_city": "Richmond",
+      "prop_zip": "",
+      "mail_address": "PO BOX 301261",
+      "mail_city": "DALLAS",
       "mail_state": "TX",
-      "mail_zip": "77469",
+      "mail_zip": "75303",
       "flags": [],
       "score": 35
     },

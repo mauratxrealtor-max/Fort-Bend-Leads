@@ -1,9 +1,9 @@
 {
-  "fetched_at": "2026-11-07T13:47:27.948073Z",
+  "fetched_at": "2026-11-08T14:07:05.081734Z",
   "source": "Fort Bend County Clerk + Fort Bend CAD",
   "date_range": {
-    "from": "2026-08-09",
-    "to": "2026-11-07"
+    "from": "2026-08-10",
+    "to": "2026-11-08"
   },
   "total": 260,
   "with_address": 224,
@@ -4616,14 +4616,14 @@
       "amount": "",
       "legal": "",
       "clerk_url": "https://ccweb.co.fort-bend.tx.us/RealEstate/SearchResults.aspx?global_id=OPR700940810&type=dtl",
-      "prop_address": "4535 Forest Home DR",
-      "prop_city": "Missouri City",
+      "prop_address": "1103 Ivyvine CT",
+      "prop_city": "Sugar Land",
       "prop_state": "TX",
-      "prop_zip": "77459",
-      "mail_address": "4535 Forest Home DR",
-      "mail_city": "Missouri City",
+      "prop_zip": "77479",
+      "mail_address": "1138 Azalea BND",
+      "mail_city": "Sugar Land",
       "mail_state": "TX",
-      "mail_zip": "77459",
+      "mail_zip": "77479",
       "flags": [],
       "score": 35
     },
